@@ -212,6 +212,7 @@ class XBoardClient {
   /// 从 xboard.config.yaml 读取：
   /// - User-Agent (security.user_agents.api_encrypted)
   /// - 混淆前缀 (security.obfuscation_prefix)
+  /// - V2Board适配器开关 (security.enable_v2board_adapter)
   Future<HttpConfig> _loadHttpConfigFromFile() async {
     try {
       // 从配置文件获取加密 UA（用于 API 请求和 Caddy 认证）
@@ -220,12 +221,16 @@ class XBoardClient {
       // 从配置文件获取混淆前缀
       final obfuscationPrefix = await ConfigFileLoaderHelper.getObfuscationPrefix();
       
+      // 从配置文件获取 V2Board 适配器开关
+      final enableV2BoardAdapter = await ConfigFileLoaderHelper.getEnableV2BoardAdapter();
+      
       // 构建 HttpConfig
       return HttpConfig(
         userAgent: userAgent,
         obfuscationPrefix: obfuscationPrefix,
         enableAutoDeobfuscation: obfuscationPrefix != null,
         enableCertificatePinning: false,
+        enableV2BoardAdapter: enableV2BoardAdapter,
       );
     } catch (e) {
       _logger.error('[SDK] 加载 HTTP 配置失败，使用默认配置', e);

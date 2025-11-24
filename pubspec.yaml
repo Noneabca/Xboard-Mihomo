@@ -101,6 +101,7 @@ flutter:
     - assets/images/avatars/
     - assets/cer/
     - assets/config/xboard.config.yaml
+    - assets/config/config.json
   fonts:
     - family: JetBrainsMono
       fonts:

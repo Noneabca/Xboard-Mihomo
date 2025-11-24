@@ -290,5 +290,26 @@ extension ConfigFileLoaderHelper on ConfigFileLoader {
       return null;
     }
   }
+  
+  /// 获取是否启用 V2Board 适配器
+  /// 
+  /// 返回配置文件中的 enable_v2board_adapter 设置
+  /// 如果未配置，默认为 false（使用 XBoard 格式）
+  static Future<bool> getEnableV2BoardAdapter() async {
+    try {
+      final security = await getSecurityConfig();
+      final enabled = security['enable_v2board_adapter'];
+      
+      if (enabled is bool) {
+        _logger.info('[ConfigLoader] V2Board适配器: ${enabled ? "已启用" : "已禁用"}');
+        return enabled;
+      }
+      
+      return false;
+    } catch (e) {
+      _logger.warning('获取 V2Board 适配器开关失败: $e');
+      return false;
+    }
+  }
 }
 

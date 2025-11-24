@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:encrypt/encrypt.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import '../core/config_settings.dart';
 import '../../core/core.dart';
 
@@ -57,48 +58,61 @@ class ConfigResult<T> {
 
 /// 多配置源结果
 class MultiConfigResult {
-  /// 重定向配置源结果
-  final ConfigResult<Map<String, dynamic>> redirectResult;
+  /// 所有配置源结果（按优先级排序）
+  final List<ConfigResult<Map<String, dynamic>>> results;
   
-  /// Gitee配置源结果
-  final ConfigResult<Map<String, dynamic>> giteeResult;
+  const MultiConfigResult(this.results);
   
-  const MultiConfigResult({
-    required this.redirectResult,
-    required this.giteeResult,
-  });
+  /// 兼容旧接口：重定向配置源结果
+  ConfigResult<Map<String, dynamic>> get redirectResult {
+    return results.firstWhere(
+      (r) => r.source == 'redirect',
+      orElse: () => ConfigResult.failure('重定向配置源未注册', 'redirect'),
+    );
+  }
+  
+  /// 兼容旧接口：Gitee配置源结果
+  ConfigResult<Map<String, dynamic>> get giteeResult {
+    return results.firstWhere(
+      (r) => r.source == 'gitee',
+      orElse: () => ConfigResult.failure('Gitee配置源未注册', 'gitee'),
+    );
+  }
   
   /// 是否有任何一个配置源成功
-  bool get hasSuccess => redirectResult.isSuccess || giteeResult.isSuccess;
+  bool get hasSuccess => results.any((r) => r.isSuccess);
   
   /// 获取第一个成功的配置数据
   Map<String, dynamic>? get firstSuccessfulData {
-    if (redirectResult.isSuccess && redirectResult.data != null) {
-      return redirectResult.data;
-    }
-    if (giteeResult.isSuccess && giteeResult.data != null) {
-      return giteeResult.data;
-    }
-    return null;
+    final successResult = results.firstWhere(
+      (r) => r.isSuccess && r.data != null,
+      orElse: () => ConfigResult.failure('无成功配置', 'none'),
+    );
+    return successResult.data;
   }
   
   /// 获取第一个成功的配置源名称
   String? get firstSuccessfulSource {
-    if (redirectResult.isSuccess) return redirectResult.source;
-    if (giteeResult.isSuccess) return giteeResult.source;
-    return null;
+    final successResult = results.firstWhere(
+      (r) => r.isSuccess,
+      orElse: () => ConfigResult.failure('无成功配置', 'none'),
+    );
+    return successResult.isSuccess ? successResult.source : null;
   }
 
   /// 获取第一个成功的结果
   ConfigResult<Map<String, dynamic>>? get firstSuccessful {
-    if (redirectResult.isSuccess) return redirectResult;
-    if (giteeResult.isSuccess) return giteeResult;
-    return null;
+    try {
+      return results.firstWhere((r) => r.isSuccess);
+    } catch (e) {
+      return null;
+    }
   }
   
   @override
   String toString() {
-    return 'MultiConfigResult{redirect: ${redirectResult.status}, gitee: ${giteeResult.status}}';
+    final statusMap = {for (var r in results) r.source: r.status};
+    return 'MultiConfigResult{$statusMap}';
   }
 }
 
@@ -257,6 +271,46 @@ class GiteeConfigSource implements ConfigSource {
   }
 }
 
+/// 本地 Assets 配置源实现
+class LocalConfigSource implements ConfigSource {
+  final String assetPath;
+  final Duration timeout;
+
+  LocalConfigSource({
+    required this.assetPath,
+    Duration? timeout,
+  }) : timeout = timeout ?? const Duration(seconds: 5);
+
+  @override
+  String get sourceName => 'local';
+
+  @override
+  int get priority => 0; // 最高优先级
+
+  @override
+  Future<ConfigResult<Map<String, dynamic>>> fetchConfig() async {
+    try {
+      _logger.info('开始从 Assets 加载本地配置: $assetPath');
+      
+      // 从 assets 加载配置文件
+      final jsonString = await rootBundle.loadString(assetPath);
+      
+      if (jsonString.trim().isEmpty) {
+        _logger.error('本地配置文件为空');
+        return ConfigResult.failure("本地配置文件为空", sourceName);
+      }
+
+      final jsonData = json.decode(jsonString.trim()) as Map<String, dynamic>;
+      _logger.info('本地配置加载成功');
+      return ConfigResult.success(jsonData, sourceName);
+
+    } catch (e) {
+      _logger.error('本地配置加载异常', e);
+      return ConfigResult.failure("本地配置加载异常: ${e.toString()}", sourceName);
+    }
+  }
+}
+
 /// 远程配置源（兼容旧接口）
 class RemoteConfigSource {
   final String name;
@@ -332,6 +386,14 @@ class RemoteConfigManager {
     
     for (final sourceConfig in settings.sources) {
       switch (sourceConfig.name) {
+        case 'local':
+          // 本地 assets 配置源
+          sources.add(LocalConfigSource(
+            assetPath: sourceConfig.url,
+            timeout: sourceConfig.timeout ?? settings.timeout,
+          ));
+          _logger.info('[ConfigManager] 添加本地配置源: ${sourceConfig.url}');
+          break;
         case 'redirect':
           sources.add(RedirectConfigSource(
             redirectUrl: sourceConfig.url,
@@ -369,49 +431,35 @@ class RemoteConfigManager {
       throw Exception('没有可用的配置源');
     }
 
-    // 查找重定向和Gitee配置源
-    ConfigSource? redirectSource;
-    ConfigSource? giteeSource;
+    // 按优先级排序配置源（优先级低的先执行）
+    final sortedSources = List<ConfigSource>.from(_configSources)
+      ..sort((a, b) => a.priority.compareTo(b.priority));
 
-    for (final source in _configSources) {
-      if (source.sourceName == 'redirect') {
-        redirectSource = source;
-      } else if (source.sourceName == 'gitee') {
-        giteeSource = source;
-      }
-    }
+    List<ConfigResult<Map<String, dynamic>>> results;
 
-    // 并发或串行获取配置
-    late ConfigResult<Map<String, dynamic>> redirectResult;
-    late ConfigResult<Map<String, dynamic>> giteeResult;
-
-    if (_enableConcurrentFetch && redirectSource != null && giteeSource != null) {
+    if (_enableConcurrentFetch && sortedSources.length > 1) {
       // 并发请求
-      final results = await Future.wait([
-        _fetchWithRetry(redirectSource),
-        _fetchWithRetry(giteeSource),
-      ]);
-      redirectResult = results[0];
-      giteeResult = results[1];
+      _logger.info('[配置管理器] 并发获取 ${sortedSources.length} 个配置源');
+      results = await Future.wait(
+        sortedSources.map((source) => _fetchWithRetry(source)),
+      );
     } else {
       // 串行请求
-      if (redirectSource != null) {
-        redirectResult = await _fetchWithRetry(redirectSource);
-      } else {
-        redirectResult = ConfigResult.failure('重定向配置源未注册', 'redirect');
-      }
-
-      if (giteeSource != null) {
-        giteeResult = await _fetchWithRetry(giteeSource);
-      } else {
-        giteeResult = ConfigResult.failure('Gitee配置源未注册', 'gitee');
+      _logger.info('[配置管理器] 串行获取 ${sortedSources.length} 个配置源');
+      results = [];
+      for (final source in sortedSources) {
+        final result = await _fetchWithRetry(source);
+        results.add(result);
+        
+        // 如果有一个成功，且优先级最高，可以提前返回
+        if (result.isSuccess && source.priority == 0) {
+          _logger.info('[配置管理器] 最高优先级配置源 ${source.sourceName} 成功，提前返回');
+          break;
+        }
       }
     }
 
-    return MultiConfigResult(
-      redirectResult: redirectResult,
-      giteeResult: giteeResult,
-    );
+    return MultiConfigResult(results);
   }
 
   /// 只获取重定向配置源的结果

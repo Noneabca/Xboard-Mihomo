@@ -52,6 +52,12 @@ xboard:
     # 如果后端没有使用混淆，设置为空字符串或 null
     obfuscation_prefix: YOUR_OBFS_PREFIX_
     
+    # ✨ V2Board 适配器（新增）
+    # 如果您的后端使用 V2Board 而非 XBoard，请将此项设置为 true
+    # 适配器将自动转换 V2Board 和 XBoard 之间的数据格式差异
+    # 默认: false (使用 XBoard 格式)
+    enable_v2board_adapter: true
+    
     # User-Agent 配置（域名竞速专用）
     # ⚠️ 重要：这些UA字符串与后端约定，修改可能导致功能异常
     user_agents:

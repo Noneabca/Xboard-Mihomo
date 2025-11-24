@@ -437,20 +437,22 @@ class ChatNotifier extends StateNotifier<ChatState> {
 }
 
 // Provider定义
-final apiServiceProvider = Provider<CustomerSupportApiService>((ref) {
+final apiServiceProvider = Provider<CustomerSupportApiService?>((ref) {
   final apiBaseUrl = CustomerSupportServiceConfig.apiBaseUrl;
   if (apiBaseUrl == null) {
-    throw Exception(appLocalizations.onlineSupportApiConfigNotFound);
+    _logger.warning('OnlineSupport API配置未找到，跳过初始化', null);
+    return null;
   }
   return CustomerSupportApiService(
     baseUrl: apiBaseUrl,
   );
 });
 
-final wsServiceProvider = Provider<CustomerSupportWebSocketService>((ref) {
+final wsServiceProvider = Provider<CustomerSupportWebSocketService?>((ref) {
   final wsBaseUrl = CustomerSupportServiceConfig.wsBaseUrl;
   if (wsBaseUrl == null) {
-    throw Exception(appLocalizations.onlineSupportWebSocketConfigNotFound);
+    _logger.warning('OnlineSupport WebSocket配置未找到，跳过初始化', null);
+    return null;
   }
 
   final service = CustomerSupportWebSocketService(
@@ -472,6 +474,12 @@ final wsServiceProvider = Provider<CustomerSupportWebSocketService>((ref) {
 /// 先发送当前状态,然后监听后续变化,确保订阅时能立即获取状态
 final wsConnectionStatusProvider = StreamProvider<WebSocketStatus>((ref) async* {
   final wsService = ref.watch(wsServiceProvider);
+  
+  // 如果服务未配置，返回断开状态
+  if (wsService == null) {
+    yield WebSocketStatus.disconnected;
+    return;
+  }
 
   // 先 yield 当前状态
   yield wsService.currentStatus;
@@ -485,6 +493,11 @@ final wsConnectionStatusProvider = StreamProvider<WebSocketStatus>((ref) async* 
 final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
   final apiService = ref.watch(apiServiceProvider);
   final wsService = ref.watch(wsServiceProvider);
+  
+  // 如果服务未配置，抛出异常
+  if (apiService == null || wsService == null) {
+    throw Exception('在线客服服务未配置，无法使用此功能');
+  }
   
   return ChatNotifier(
     apiService: apiService,

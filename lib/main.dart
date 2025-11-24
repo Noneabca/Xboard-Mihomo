@@ -95,6 +95,20 @@ Future<void> _initializeXBoardServices() async {
     final configSettings = await ConfigFileLoader.loadFromFile();
     print('[Main] 配置文件加载成功，Provider: ${configSettings.currentProvider}');
     
+    // 检查是否有有效的远程配置源
+    final hasValidSources = configSettings.remoteConfig.sources.isNotEmpty &&
+        configSettings.remoteConfig.sources.any((source) => 
+            source.url.isNotEmpty && 
+            !source.url.contains('your-') && 
+            !source.url.contains('example.com'));
+    
+    if (!hasValidSources) {
+      print('[Main] ⚠️ 警告：未配置有效的远程配置源，XBoard功能将不可用');
+      print('[Main] 请编辑 assets/config/xboard.config.yaml 配置文件');
+      // 不初始化XBoard，应用继续启动
+      return;
+    }
+    
     // 2. 加载安全配置（UA、证书、解密密钥等）
     await _loadSecurityConfig();
     print('[Main] 安全配置加载成功');
@@ -115,9 +129,9 @@ Future<void> _initializeXBoardServices() async {
     print('[Main] XBoard SDK初始化成功');
     
   } catch (e) {
-    print('[Main] XBoard服务初始化失败: $e');
-    // 没有域名就失败，不需要降级
-    rethrow;
+    print('[Main] ⚠️ XBoard服务初始化失败: $e');
+    print('[Main] 应用将继续启动，但XBoard功能将不可用');
+    // 不要抛出异常，让应用继续启动
   }
 }
 

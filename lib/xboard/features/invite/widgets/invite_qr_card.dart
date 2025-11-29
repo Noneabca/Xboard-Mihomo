@@ -88,27 +88,27 @@ class InviteQrCard extends ConsumerWidget {
                 child: Column(
                   children: [
                     Icon(
-                      Icons.error_outline,
+                      Icons.qr_code_outlined,
                       size: 64,
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      appLocalizations.inviteCodeGenFailed,
+                      appLocalizations.noInviteCodeYet,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      appLocalizations.checkNetwork,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _generateInviteCode(context, ref),
+                      icon: const Icon(Icons.add),
+                      label: Text(appLocalizations.generateInviteCode),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -127,6 +127,15 @@ class InviteQrCard extends ConsumerWidget {
 
   void _saveQrCode(BuildContext context, String inviteUrl) {
     XBoardNotification.showInfo(appLocalizations.saveQrCodeFeature);
+  }
+
+  Future<void> _generateInviteCode(BuildContext context, WidgetRef ref) async {
+    final result = await ref.read(inviteProvider.notifier).generateInviteCode();
+    if (result != null) {
+      XBoardNotification.showSuccess(appLocalizations.inviteCodeGeneratedSuccessfully);
+    } else {
+      XBoardNotification.showError(appLocalizations.inviteCodeGenFailed);
+    }
   }
 
   String _getSdkBaseUrl() {

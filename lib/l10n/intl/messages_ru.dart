@@ -1119,7 +1119,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "xboardInvalidResponseFormat": MessageLookupByLibrary.simpleMessage(
       "Неверный формат ответа от сервера",
     ),
-    "inviteCodeIncorrect": MessageLookupByLibrary.simpleMessage("Код приглашения может быть неверным, проверьте и введите снова"),
     "xboardInviteCode": MessageLookupByLibrary.simpleMessage("Код приглашения"),
     "xboardKeepSubscriptionLinkSafe": MessageLookupByLibrary.simpleMessage(
       "Храните ссылку на подписку в безопасности и не делитесь ею с другими",

@@ -51,9 +51,9 @@ V2Board 是一个代理服务管理面板系统，提供完整的用户管理、
 {
   "email": "user@example.com",          // 必填，邮箱格式
   "password": "password123",             // 必填，最少8位
-  "invite_code": "INVITE123",            // 可选，邀请码
-  "email_code": "123456",                // 可选，邮箱验证码（如果开启邮箱验证）
-  "recaptcha_data": "recaptcha_token"    // 可选，reCAPTCHA验证（如果开启）
+  "invite_code": "INVITE123",            // 条件必填，当 is_invite_force=1 时为必填
+  "email_code": "123456",                // 条件必填，当 is_email_verify=1 时为必填
+  "recaptcha_data": "recaptcha_token"    // 条件必填，当 is_recaptcha=1 时为必填
 }
 ```
 
@@ -626,11 +626,11 @@ V2Board 是一个代理服务管理面板系统，提供完整的用户管理、
 ```json
 {
   "data": {
-    "is_recaptcha": 0,
-    "is_email_verify": 0,
-    "is_invite_force": 0,
+    "is_recaptcha": 0,           // 0:关闭 1:开启，控制是否需要 recaptcha_data
+    "is_email_verify": 0,        // 0:关闭 1:开启，控制注册时是否需要 email_code
+    "is_invite_force": 0,        // 0:可选 1:必填，控制注册时邀请码是否必填
     "app_name": "V2Board",
-    "stop_register": 0
+    "stop_register": 0           // 0:开放注册 1:关闭注册
   }
 }
 ```

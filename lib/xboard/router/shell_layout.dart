@@ -18,7 +18,7 @@ class AdaptiveShellLayout extends ConsumerWidget {
 
   void _onDestinationSelected(BuildContext context, int index, bool isDesktop) {
     if (isDesktop) {
-      // 桌面端路由：首页、套餐、客服、邀请
+      // 桌面端路由：首页、套餐、邀请
       // 使用 context.go() 让 GoRouter 自动切换到对应的分支
       switch (index) {
         case 0:
@@ -28,9 +28,6 @@ class AdaptiveShellLayout extends ConsumerWidget {
           context.go('/plans');
           break;
         case 2:
-          context.go('/support');
-          break;
-        case 3:
           context.go('/invite');
           break;
       }
@@ -52,19 +49,18 @@ class AdaptiveShellLayout extends ConsumerWidget {
     final location = GoRouterState.of(context).uri.path;
     
     if (isDesktop) {
-      // 桌面端导航栏索引：首页(0)、套餐(1)、客服(2)、邀请(3)
-      // 分支索引：0=首页, 1=套餐, 2=客服, 3=邀请
+      // 桌面端导航栏索引：首页(0)、套餐(1)、邀请(2)
+      // 分支索引：0=首页, 1=套餐, 2=邀请
       if (location == '/') return 0;
       if (location.startsWith('/plans')) return 1;
-      if (location.startsWith('/support')) return 2;
-      if (location.startsWith('/invite')) return 3;
+      if (location.startsWith('/invite')) return 2;
       return 0;
     } else {
       // 移动端导航栏索引：首页(0)、邀请(1)
-      // 对应的分支索引：首页=0, 邀请=3
+      // 分支索引：0=首页, 2=邀请
       if (location.startsWith('/invite')) return 1;
-      // Plans 和 Support 页面不在移动端底部导航栏中，返回 -1 表示不高亮任何项
-      if (location.startsWith('/plans') || location.startsWith('/support')) return -1;
+      // Plans 页面不在移动端底部导航栏中，返回 -1 表示不高亮任何项
+      if (location.startsWith('/plans')) return -1;
       return 0;
     }
   }
@@ -90,9 +86,9 @@ class AdaptiveShellLayout extends ConsumerWidget {
       );
     } else {
       // 移动端：Scaffold + 底部导航栏
-      // Plans 和 Support 页面不显示底部导航栏
+      // Plans 页面不显示底部导航栏
       final location = GoRouterState.of(context).uri.path;
-      final hideBottomNav = location.startsWith('/plans') || location.startsWith('/support');
+      final hideBottomNav = location.startsWith('/plans');
       
       return Scaffold(
         body: child,

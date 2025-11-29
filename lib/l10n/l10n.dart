@@ -6139,6 +6139,81 @@ class AppLocalizations {
     );
   }
 
+  /// `No invite code yet`
+  String get noInviteCodeYet {
+    return Intl.message(
+      'No invite code yet',
+      name: 'noInviteCodeYet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Generate Invite Code`
+  String get generateInviteCode {
+    return Intl.message(
+      'Generate Invite Code',
+      name: 'generateInviteCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite code generated successfully`
+  String get inviteCodeGeneratedSuccessfully {
+    return Intl.message(
+      'Invite code generated successfully',
+      name: 'inviteCodeGeneratedSuccessfully',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite Codes`
+  String get inviteCodeList {
+    return Intl.message(
+      'Invite Codes',
+      name: 'inviteCodeList',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy Code`
+  String get copyInviteCode {
+    return Intl.message(
+      'Copy Code',
+      name: 'copyInviteCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite code copied`
+  String get inviteCodeCopied {
+    return Intl.message(
+      'Invite code copied',
+      name: 'inviteCodeCopied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Available`
+  String get available {
+    return Intl.message('Available', name: 'available', desc: '', args: []);
+  }
+
+  /// `Used`
+  String get used {
+    return Intl.message('Used', name: 'used', desc: '', args: []);
+  }
+
+  /// `Created`
+  String get created {
+    return Intl.message('Created', name: 'created', desc: '', args: []);
+  }
+
   /// `Please check network and retry`
   String get checkNetwork {
     return Intl.message(

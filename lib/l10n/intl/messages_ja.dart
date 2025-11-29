@@ -828,7 +828,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "xboardInvalidResponseFormat": MessageLookupByLibrary.simpleMessage(
       "サーバーからの無効なレスポンス形式",
     ),
-    "inviteCodeIncorrect": MessageLookupByLibrary.simpleMessage("招待コードが正しくない可能性があります。確認して再入力してください"),
     "xboardInviteCode": MessageLookupByLibrary.simpleMessage("招待コード"),
     "xboardKeepSubscriptionLinkSafe": MessageLookupByLibrary.simpleMessage(
       "サブスクリプションリンクを安全に保管し、他人と共有しないでください",

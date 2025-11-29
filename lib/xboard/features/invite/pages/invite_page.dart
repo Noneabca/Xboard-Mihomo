@@ -7,6 +7,7 @@ import 'package:fl_clash/xboard/features/invite/widgets/user_menu_widget.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/error_card.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/invite_rules_card.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/invite_qr_card.dart';
+import 'package:fl_clash/xboard/features/invite/widgets/invite_codes_list_card.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/invite_stats_card.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/wallet_details_card.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/commission_history_card.dart';
@@ -32,11 +33,9 @@ class _InvitePageState extends ConsumerState<InvitePage>
       if (_hasInitialized) return;
       _hasInitialized = true;
       
+      // 只加载邀请数据，不自动生成邀请码
+      // 如果用户需要邀请码，可以手动点击生成按钮
       await ref.read(inviteProvider.notifier).refresh();
-      final inviteState = ref.read(inviteProvider);
-      if (!inviteState.hasInviteData || inviteState.inviteData!.codes.isEmpty) {
-        await ref.read(inviteProvider.notifier).generateInviteCode();
-      }
     });
   }
 
@@ -72,6 +71,9 @@ class _InvitePageState extends ConsumerState<InvitePage>
                   const SizedBox(height: 16),
                   
                   const InviteQrCard(),
+                  const SizedBox(height: 16),
+                  
+                  const InviteCodesListCard(),
                   const SizedBox(height: 16),
                   
                   const InviteStatsCard(),

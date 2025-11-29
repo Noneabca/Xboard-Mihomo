@@ -190,6 +190,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "autoUpdateInterval": MessageLookupByLibrary.simpleMessage(
       "Auto update interval (minutes)",
     ),
+    "available": MessageLookupByLibrary.simpleMessage("Available"),
     "availableCommission": MessageLookupByLibrary.simpleMessage("Available"),
     "backToLogin": MessageLookupByLibrary.simpleMessage("Back to Login"),
     "backup": MessageLookupByLibrary.simpleMessage("Backup"),
@@ -282,6 +283,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "copyEnvVar": MessageLookupByLibrary.simpleMessage(
       "Copying environment variables",
     ),
+    "copyInviteCode": MessageLookupByLibrary.simpleMessage("Copy Code"),
     "copyInviteLink": MessageLookupByLibrary.simpleMessage("Copy Link"),
     "copyLink": MessageLookupByLibrary.simpleMessage("Copy link"),
     "copySuccess": MessageLookupByLibrary.simpleMessage("Copy success"),
@@ -291,6 +293,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "crashTest": MessageLookupByLibrary.simpleMessage("Crash test"),
     "create": MessageLookupByLibrary.simpleMessage("Create"),
     "createAccount": MessageLookupByLibrary.simpleMessage("Create Account"),
+    "created": MessageLookupByLibrary.simpleMessage("Created"),
     "credentialsSaved": MessageLookupByLibrary.simpleMessage(
       "Credentials saved",
     ),
@@ -423,6 +426,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "generalDesc": MessageLookupByLibrary.simpleMessage(
       "Modify general settings",
     ),
+    "generateInviteCode": MessageLookupByLibrary.simpleMessage(
+      "Generate Invite Code",
+    ),
     "generatingInviteCode": MessageLookupByLibrary.simpleMessage(
       "Generating invite code...",
     ),
@@ -479,14 +485,21 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "invite": MessageLookupByLibrary.simpleMessage("Invite"),
     "inviteCode": MessageLookupByLibrary.simpleMessage("Invite Code"),
+    "inviteCodeCopied": MessageLookupByLibrary.simpleMessage(
+      "Invite code copied",
+    ),
     "inviteCodeGenFailed": MessageLookupByLibrary.simpleMessage(
       "Invite code generation failed",
     ),
-    "inviteCodeOptional": MessageLookupByLibrary.simpleMessage(
-      "Invite Code (optional)",
+    "inviteCodeGeneratedSuccessfully": MessageLookupByLibrary.simpleMessage(
+      "Invite code generated successfully",
     ),
     "inviteCodeIncorrect": MessageLookupByLibrary.simpleMessage(
       "Invite code may be incorrect, please check and re-enter",
+    ),
+    "inviteCodeList": MessageLookupByLibrary.simpleMessage("Invite Codes"),
+    "inviteCodeOptional": MessageLookupByLibrary.simpleMessage(
+      "Invite Code (optional)",
     ),
     "inviteCodeRequired": MessageLookupByLibrary.simpleMessage(
       "Invite Code Required",
@@ -603,6 +616,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "noInfo": MessageLookupByLibrary.simpleMessage("No info"),
     "noInvitationData": MessageLookupByLibrary.simpleMessage(
       "No invitation data",
+    ),
+    "noInviteCodeYet": MessageLookupByLibrary.simpleMessage(
+      "No invite code yet",
     ),
     "noMoreInfoDesc": MessageLookupByLibrary.simpleMessage("No more info"),
     "noNetwork": MessageLookupByLibrary.simpleMessage("No network"),
@@ -1118,6 +1134,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "urlTip": m31,
     "useHosts": MessageLookupByLibrary.simpleMessage("Use hosts"),
     "useSystemHosts": MessageLookupByLibrary.simpleMessage("Use system hosts"),
+    "used": MessageLookupByLibrary.simpleMessage("Used"),
     "userCenter": MessageLookupByLibrary.simpleMessage("User Center"),
     "value": MessageLookupByLibrary.simpleMessage("Value"),
     "verificationCode": MessageLookupByLibrary.simpleMessage(

@@ -91,11 +91,25 @@ class SubscriptionDownloader {
       
       // 验证配置
       _logger.info('验证订阅配置...');
+      
+      // 调试:输出配置内容前1000个字符
+      final previewLength = result.content.length > 1000 ? 1000 : result.content.length;
+      _logger.info('订阅配置预览（前${previewLength}字符）:\n${result.content.substring(0, previewLength)}');
+      
       final validationMessage = await clashCore.validateConfig(result.content);
       if (validationMessage.isNotEmpty) {
         throw Exception('配置验证失败: $validationMessage');
       }
       _logger.info('✅ 订阅配置验证通过');
+      
+      // 统计节点数量
+      try {
+        final proxyCount = 'proxies:'.allMatches(result.content).length;
+        final proxyGroupCount = 'proxy-groups:'.allMatches(result.content).length;
+        _logger.info('📊 配置统计: proxies字段=${proxyCount > 0 ? '存在' : '不存在'}, proxy-groups字段=${proxyGroupCount > 0 ? '存在' : '不存在'}');
+      } catch (e) {
+        _logger.warning('统计节点数量失败: $e');
+      }
       
       // 创建并保存 Profile
       final profile = Profile.normal(url: url);

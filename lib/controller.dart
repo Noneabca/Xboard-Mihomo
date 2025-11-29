@@ -381,8 +381,21 @@ class AppController {
         },
         retryIf: (res) => res.isEmpty,
       );
+      
+      // 调试:输出节点组和节点数量
+      final groups = _ref.read(groupsProvider);
+      if (groups.isEmpty) {
+        commonPrint.log('⚠️ 没有找到任何节点组');
+      } else {
+        commonPrint.log('📊 节点组数量: ${groups.length}');
+        for (final group in groups) {
+          final proxyCount = group.all.length;
+          commonPrint.log('  - ${group.name}: ${proxyCount}个节点');
+        }
+      }
     } catch (_) {
       _ref.read(groupsProvider.notifier).value = [];
+      commonPrint.log('❌ 获取节点组失败');
     }
   }
 

@@ -53,14 +53,6 @@
             "description": "备用更新服务器"
         }
     ],
-    "onlineSupport": [
-        {
-            "url": "https://chat.example.com",
-            "description": "在线客服API服务",
-            "apiBaseUrl": "https://chat.example.com",
-            "wsBaseUrl": "wss://chat.example.com"
-        }
-    ],
     "subscription": {
         "urls": [
             {

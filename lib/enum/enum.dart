@@ -422,7 +422,6 @@ enum PageLabel {
   connections,
   plans,
   xboard,
-  onlineSupport,
   invite,
   userCenter, // 个人中心占位
 }

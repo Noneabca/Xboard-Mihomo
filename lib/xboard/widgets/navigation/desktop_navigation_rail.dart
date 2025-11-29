@@ -1,5 +1,4 @@
 import 'package:fl_clash/l10n/l10n.dart';
-import 'package:fl_clash/xboard/features/online_support/providers/chat_provider.dart';
 import 'package:fl_clash/xboard/features/shared/shared.dart';
 import 'package:fl_clash/xboard/features/invite/widgets/user_menu_widget.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,6 @@ class DesktopNavigationRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatState = ref.watch(chatProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = colorScheme.brightness == Brightness.dark;
 
@@ -123,17 +121,6 @@ class DesktopNavigationRail extends ConsumerWidget {
           label: Text(appLocalizations.xboardPlans),
         ),
         NavigationRailDestination(
-          icon: _buildIconWithBadge(
-            const Icon(Icons.support_agent_outlined),
-            chatState.unreadCount,
-          ),
-          selectedIcon: _buildIconWithBadge(
-            const Icon(Icons.support_agent),
-            chatState.unreadCount,
-          ),
-          label: Text(appLocalizations.onlineSupport),
-        ),
-        NavigationRailDestination(
           icon: const Icon(Icons.people_outline),
           selectedIcon: const Icon(Icons.people),
           label: Text(appLocalizations.invite),
@@ -153,16 +140,6 @@ class DesktopNavigationRail extends ConsumerWidget {
         const UserMenuWidget(),
         const SizedBox(height: 16),
       ],
-    );
-  }
-
-  /// 带未读标记的图标
-  Widget _buildIconWithBadge(Widget icon, int count) {
-    if (count == 0) return icon;
-
-    return BadgeIcon(
-      icon: icon,
-      count: count,
     );
   }
 }

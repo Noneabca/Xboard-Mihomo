@@ -18,7 +18,6 @@ import 'controller.dart';
 import 'pages/pages.dart';
 import 'xboard/xboard.dart';
 import 'package:fl_clash/xboard/sdk/xboard_sdk.dart';
-import 'package:fl_clash/xboard/features/online_support/providers/websocket_auto_connector.dart';
 import 'package:fl_clash/xboard/router/app_router.dart' as xboard_router;
 import 'package:fl_clash/xboard/features/auth/auth.dart';
 
@@ -215,10 +214,6 @@ class ApplicationState extends ConsumerState<Application> {
       _buildState(
         Consumer(
           builder: (_, ref, child) {
-            // 初始化 WebSocket 自动连接器 - 监听登录状态并自动管理 WebSocket 连接
-            // 这个 Provider 会在登录成功时自动连接,登出时自动断开
-            ref.watch(webSocketAutoConnectorProvider);
-
             final locale =
                 ref.watch(appSettingProvider.select((state) => state.locale));
             final themeProps = ref.watch(themeSettingProvider);

@@ -59,8 +59,25 @@ class SubscriptionStatusService {
       );
     }
     
-    // 只使用 profileSubscriptionInfo 作为数据源
-    if (profileSubscriptionInfo == null) {
+    // 优先使用 profileSubscriptionInfo，如果为空则尝试从 userState.subscriptionInfo 构造
+    fl_models.SubscriptionInfo? effectiveSubscriptionInfo = profileSubscriptionInfo;
+    
+    // V2Board适配: 如果订阅链接响应头没有subscription-userinfo，从API订阅信息构造
+    if (effectiveSubscriptionInfo == null && userState.subscriptionInfo != null) {
+      final apiSubInfo = userState.subscriptionInfo!;
+      // 从API订阅信息构造Profile订阅信息
+      effectiveSubscriptionInfo = fl_models.SubscriptionInfo(
+        upload: apiSubInfo.uploadedBytes,
+        download: apiSubInfo.downloadedBytes,
+        total: apiSubInfo.transferLimit,
+        expire: apiSubInfo.expiredAt != null 
+          ? (apiSubInfo.expiredAt!.millisecondsSinceEpoch ~/ 1000) 
+          : 0,
+      );
+    }
+    
+    // 检查是否真的没有订阅信息
+    if (effectiveSubscriptionInfo == null) {
       return SubscriptionStatusResult(
         type: SubscriptionStatusType.noSubscription,
         messageBuilder: (context) => AppLocalizations.of(context).subscriptionNoSubscription,
@@ -70,7 +87,7 @@ class SubscriptionStatusService {
     }
     
     // 检查过期时间
-    final expiredAt = _getExpiredAt(profileSubscriptionInfo);
+    final expiredAt = _getExpiredAt(effectiveSubscriptionInfo);
     if (expiredAt != null) {
       final now = DateTime.now();
       final isExpired = now.isAfter(expiredAt);
@@ -108,7 +125,7 @@ class SubscriptionStatusService {
     }
     
     // 检查流量状态
-    final trafficStatus = _checkTrafficStatus(profileSubscriptionInfo);
+    final trafficStatus = _checkTrafficStatus(effectiveSubscriptionInfo);
     if (trafficStatus != null) {
       return trafficStatus;
     }

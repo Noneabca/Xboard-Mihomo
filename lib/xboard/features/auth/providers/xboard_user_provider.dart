@@ -54,7 +54,9 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
         state = state.copyWith(
           isAuthenticated: true,
           isInitialized: true,
-          email: email,
+          email: () => email,
+          userInfo: () => userInfo,
+          subscriptionInfo: () => subscriptionInfo,
         );
         
         if (userInfo != null) {
@@ -112,20 +114,34 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
   }
   Future<void> _silentUpdateUserData() async {
     try {
+      _logger.info('===== 静默更新用户数据开始 =====');
       final userRepo = ref.read(userRepositoryProvider);
       final subscriptionRepo = ref.read(subscriptionRepositoryProvider);
       
       // 获取订阅信息
+      _logger.info('1. 开始获取订阅信息...');
       final subscriptionResult = await subscriptionRepo.getSubscription();
       final subscriptionData = subscriptionResult.dataOrNull;
+      _logger.info('2. 订阅信息获取结果: ${subscriptionData != null}');
+      if (subscriptionData != null) {
+        _logger.info('   - uploadedBytes: ${subscriptionData.uploadedBytes}');
+        _logger.info('   - downloadedBytes: ${subscriptionData.downloadedBytes}');
+        _logger.info('   - transferLimit: ${subscriptionData.transferLimit}');
+        _logger.info('   - expiredAt: ${subscriptionData.expiredAt}');
+        _logger.info('   - subscribeUrl: ${subscriptionData.subscribeUrl}');
+      }
 
       // 获取用户信息
+      DomainUser? userInfoData;
       try {
+        _logger.info('3. 开始获取用户信息...');
         final userInfoResult = await userRepo.getUserInfo();
-        final userInfoData = userInfoResult.dataOrNull;
+        userInfoData = userInfoResult.dataOrNull;
+        _logger.info('4. 用户信息获取结果: ${userInfoData != null}');
         if (userInfoData != null) {
           await _storageService.saveDomainUser(userInfoData);
           ref.read(userInfoProvider.notifier).state = userInfoData;
+          _logger.info('   - email: ${userInfoData.email}');
         }
       } catch (e) {
         _logger.info('静默更新用户信息失败: $e');
@@ -143,19 +159,37 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
         }
       }
 
-      _logger.info('静默更新用户数据完成');
-    } catch (e) {
+      // ✅ 更新 state，否则 userState.subscriptionInfo 会一直是 null
+      _logger.info('5. 准备更新 state...');
+      _logger.info('   - 当前 state.subscriptionInfo: ${state.subscriptionInfo != null}');
+      _logger.info('   - 即将设置的 subscriptionData: ${subscriptionData != null}');
+      
+      state = state.copyWith(
+        userInfo: () => userInfoData,
+        subscriptionInfo: () => subscriptionData,
+      );
+
+      _logger.info('6. state 已更新');
+      _logger.info('   - state.subscriptionInfo: ${state.subscriptionInfo != null}');
+      if (state.subscriptionInfo != null) {
+        _logger.info('   - state.subscriptionInfo.uploadedBytes: ${state.subscriptionInfo!.uploadedBytes}');
+        _logger.info('   - state.subscriptionInfo.downloadedBytes: ${state.subscriptionInfo!.downloadedBytes}');
+        _logger.info('   - state.subscriptionInfo.transferLimit: ${state.subscriptionInfo!.transferLimit}');
+      }
+      _logger.info('===== 静默更新用户数据完成 =====');
+    } catch (e, stackTrace) {
       _logger.info('静默更新用户数据失败: $e');
+      _logger.info('错误堆栈: $stackTrace');
     }
   }
   void _showTokenExpiredDialog() {
     state = state.copyWith(
-      errorMessage: 'TOKEN_EXPIRED', // 特殊标记，UI层检测到后显示对话框
+      errorMessage: () => 'TOKEN_EXPIRED',
     );
   }
   void clearTokenExpiredError() {
     if (state.errorMessage == 'TOKEN_EXPIRED') {
-      state = state.copyWith(errorMessage: null);
+      state = state.copyWith(errorMessage: () => null);
     }
   }
   Future<void> handleTokenExpired() async {
@@ -168,7 +202,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
     return await quickAuth();
   }
   Future<bool> login(String email, String password) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
       _logger.info('开始登录: $email');
       
@@ -178,7 +212,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       if (result.isFailure) {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result.exceptionOrNull?.message ?? '登录失败',
+          errorMessage: () => result.exceptionOrNull?.message ?? '登录失败',
         );
         return false;
       }
@@ -187,11 +221,14 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       await _storageService.saveUserEmail(email);
       
       // 获取用户信息和订阅信息
+      DomainUser? userInfo;
+      DomainSubscription? subscriptionInfo;
+      
       try {
         _logger.info('开始获取用户信息...');
         final userRepo = ref.read(userRepositoryProvider);
         final userInfoResult = await userRepo.getUserInfo();
-        final userInfo = userInfoResult.dataOrNull;
+        userInfo = userInfoResult.dataOrNull;
         
         _logger.info('用户信息API调用完成: ${userInfo != null}');
         if (userInfo != null) {
@@ -205,7 +242,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
         _logger.info('开始获取订阅信息...');
         final subscriptionRepo = ref.read(subscriptionRepositoryProvider);
         final subscriptionResult = await subscriptionRepo.getSubscription();
-        final subscriptionInfo = subscriptionResult.dataOrNull;
+        subscriptionInfo = subscriptionResult.dataOrNull;
         
         _logger.info('订阅信息API调用完成: ${subscriptionInfo != null}');
         if (subscriptionInfo != null) {
@@ -232,14 +269,24 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
         final newState = state.copyWith(
           isAuthenticated: true,
           isInitialized: true,
-          email: email,
+          email: () => email,
           isLoading: false,
+          userInfo: () => userInfo,
+          subscriptionInfo: () => subscriptionInfo,
         );
         state = newState;
         _logger.info('===== 认证状态已更新! =====');
         _logger.info('isAuthenticated: ${state.isAuthenticated}');
         _logger.info('isInitialized: ${state.isInitialized}');
         _logger.info('email: ${state.email}');
+        _logger.info('userInfo: ${state.userInfo != null}');
+        _logger.info('subscriptionInfo: ${state.subscriptionInfo != null}');
+        if (state.subscriptionInfo != null) {
+          _logger.info('subscriptionInfo.uploadedBytes: ${state.subscriptionInfo!.uploadedBytes}');
+          _logger.info('subscriptionInfo.downloadedBytes: ${state.subscriptionInfo!.downloadedBytes}');
+          _logger.info('subscriptionInfo.transferLimit: ${state.subscriptionInfo!.transferLimit}');
+          _logger.info('subscriptionInfo.expiredAt: ${state.subscriptionInfo!.expiredAt}');
+        }
         _logger.info('===========================');
         
         return true;
@@ -251,13 +298,14 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       }
       state = state.copyWith(
         isLoading: false,
-        errorMessage: errorMessage,
+        errorMessage: () => errorMessage,
       );
       return false;
     }
   }
+
   Future<bool> register(String email, String password, String? inviteCode, String emailCode) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
       _logger.info('开始注册: $email');
       
@@ -277,7 +325,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result.exceptionOrNull?.message ?? '注册失败',
+          errorMessage: () => result.exceptionOrNull?.message ?? '注册失败',
         );
         return false;
       }
@@ -289,13 +337,13 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       }
       state = state.copyWith(
         isLoading: false,
-        errorMessage: errorMessage,
+        errorMessage: () => errorMessage,
       );
       return false;
     }
   }
   Future<bool> sendVerificationCode(String email) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
       _logger.info('发送验证码到: $email');
       // 域名服务暂时不支持发送验证码功能
@@ -304,13 +352,14 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       _logger.info('发送验证码出错: $e');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.toString(),
+        errorMessage: () => e.toString(),
       );
       return false;
     }
   }
+
   Future<bool> resetPassword(String email, String password, String emailCode) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
       _logger.info('重置密码: $email');
       
@@ -328,7 +377,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: result.exceptionOrNull?.message ?? '密码重置失败',
+          errorMessage: () => result.exceptionOrNull?.message ?? '密码重置失败',
         );
         return false;
       }
@@ -336,7 +385,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       _logger.info('重置密码出错: $e');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.toString(),
+        errorMessage: () => e.toString(),
       );
       return false;
     }
@@ -345,7 +394,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
     if (!state.isAuthenticated) {
       return;
     }
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
       _logger.info('刷新订阅信息...');
       
@@ -374,8 +423,8 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       }
 
       state = state.copyWith(
-        userInfo: userInfo,
-        subscriptionInfo: subscriptionData,
+        userInfo: () => userInfo,
+        subscriptionInfo: () => subscriptionData,
         isLoading: false,
       );
       _logger.info('订阅信息已刷新');
@@ -394,7 +443,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       _logger.info('刷新订阅信息出错: $e');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.toString(),
+        errorMessage: () => e.toString(),
       );
     }
   }
@@ -403,7 +452,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
     if (!state.isAuthenticated) {
       return;
     }
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, errorMessage: () => null);
     try {
       _logger.info('刷新订阅信息...');
       
@@ -432,8 +481,8 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       }
 
       state = state.copyWith(
-        userInfo: userInfo,
-        subscriptionInfo: subscriptionData,
+        userInfo: () => userInfo,
+        subscriptionInfo: () => subscriptionData,
         isLoading: false,
       );
       _logger.info('订阅信息已刷新');
@@ -453,7 +502,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       _logger.info('刷新订阅信息出错: $e');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.toString(),
+        errorMessage: () => e.toString(),
       );
     }
   }
@@ -471,7 +520,7 @@ class XBoardUserAuthNotifier extends Notifier<UserAuthState> {
       if (userInfoData != null) {
         await _storageService.saveDomainUser(userInfoData);
         ref.read(userInfoProvider.notifier).state = userInfoData;
-        state = state.copyWith(userInfo: userInfoData);
+        state = state.copyWith(userInfo: () => userInfoData);
         _logger.info('用户详细信息已刷新');
       }
     } catch (e) {

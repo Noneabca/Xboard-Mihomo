@@ -18,10 +18,14 @@ class ConsoleLogger implements LoggerInterface {
   /// 是否启用颜色（仅在支持 ANSI 的终端中有效）
   final bool enableColor;
 
+  /// 是否输出堆栈跟踪（默认关闭，避免大量无用输出）
+  final bool enableStackTrace;
+
   ConsoleLogger({
     this.minLevel = LogLevel.info,
     this.enableTimestamp = true,
     this.enableColor = false,
+    this.enableStackTrace = false,
   });
 
   /// ANSI 颜色代码
@@ -85,8 +89,8 @@ class ConsoleLogger implements LoggerInterface {
       print('$prefix$timestamp$levelStr Error: $error$resetColor');
     }
 
-    // 输出堆栈跟踪（保持格式一致）
-    if (stackTrace != null) {
+    // 输出堆栈跟踪（仅在启用时输出，避免大量无用输出）
+    if (enableStackTrace && stackTrace != null) {
       // ignore: avoid_print
       print('$prefix$timestamp$levelStr StackTrace:\n$stackTrace$resetColor');
     }

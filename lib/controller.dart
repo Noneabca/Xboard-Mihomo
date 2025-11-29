@@ -544,8 +544,12 @@ class AppController {
   }
 
   init() async {
+    // 自定义错误处理，只输出简洁的错误信息，避免大量堆栈跟踪
     FlutterError.onError = (details) {
-      commonPrint.log(details.stack.toString());
+      // 只输出错误摘要，不输出完整堆栈
+      commonPrint.log('[FlClash] 错误: ${details.exceptionAsString()}');
+      // 如果需要调试，可以取消注释下面这行
+      // commonPrint.log(details.stack.toString());
     };
     updateTray(true);
     await _initCore();

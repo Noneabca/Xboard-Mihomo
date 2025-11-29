@@ -68,25 +68,25 @@ class UserAuthState {
   UserAuthState copyWith({
     bool? isAuthenticated,
     bool? isInitialized,
-    String? email,
+    String? Function()? email,
     bool? isLoading,
-    String? errorMessage,
-    DomainUser? userInfo,
-    DomainSubscription? subscriptionInfo,
+    String? Function()? errorMessage,
+    DomainUser? Function()? userInfo,
+    DomainSubscription? Function()? subscriptionInfo,
   }) {
     return UserAuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isInitialized: isInitialized ?? this.isInitialized,
-      email: email ?? this.email,
+      email: email != null ? email() : this.email,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
-      userInfo: userInfo ?? this.userInfo,
-      subscriptionInfo: subscriptionInfo ?? this.subscriptionInfo,
+      errorMessage: errorMessage != null ? errorMessage() : this.errorMessage,
+      userInfo: userInfo != null ? userInfo() : this.userInfo,
+      subscriptionInfo: subscriptionInfo != null ? subscriptionInfo() : this.subscriptionInfo,
     );
   }
 
   UserAuthState clearError() {
-    return copyWith(errorMessage: null);
+    return copyWith(errorMessage: () => null);
   }
 
   @override

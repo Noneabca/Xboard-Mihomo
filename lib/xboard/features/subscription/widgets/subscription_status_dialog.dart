@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/subscription_status_service.dart';
 import 'package:fl_clash/l10n/l10n.dart';
-class SubscriptionStatusDialog extends StatelessWidget {
+import 'package:fl_clash/xboard/features/auth/providers/xboard_user_provider.dart';
+import 'package:fl_clash/providers/providers.dart';
+
+class SubscriptionStatusDialog extends ConsumerWidget {
   final SubscriptionStatusResult statusResult;
   final VoidCallback? onPurchase;
   final VoidCallback? onRefresh;
@@ -28,7 +32,11 @@ class SubscriptionStatusDialog extends StatelessWidget {
     );
   }
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 获取调试信息
+    final userState = ref.watch(xboardUserProvider);
+    final profileSubscriptionInfo = ref.watch(currentProfileProvider)?.subscriptionInfo;
+    
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -54,6 +62,57 @@ class SubscriptionStatusDialog extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            // ✅ 添加调试信息
+            if (statusResult.type == SubscriptionStatusType.noSubscription) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🔍 调试信息',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'profileSubscriptionInfo: ${profileSubscriptionInfo != null}',
+                      style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                    ),
+                    Text(
+                      'userState.subscriptionInfo: ${userState.subscriptionInfo != null}',
+                      style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                    ),
+                    if (userState.subscriptionInfo != null) ...[
+                      Text(
+                        'uploadedBytes: ${userState.subscriptionInfo!.uploadedBytes}',
+                        style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                      ),
+                      Text(
+                        'downloadedBytes: ${userState.subscriptionInfo!.downloadedBytes}',
+                        style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                      ),
+                      Text(
+                        'transferLimit: ${userState.subscriptionInfo!.transferLimit}',
+                        style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                      ),
+                      Text(
+                        'expiredAt: ${userState.subscriptionInfo!.expiredAt}',
+                        style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
             if (_shouldShowFeatureList()) ...[
               const SizedBox(height: 16),
               _buildFeatureList(context),

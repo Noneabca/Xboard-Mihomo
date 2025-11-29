@@ -103,6 +103,11 @@ class XBoardSubscriptionRepository implements SubscriptionRepository {
   // ========== 私有方法：数据转换 ==========
 
   DomainSubscription _mapToDomain(xb_sdk.SubscriptionInfo sdkSub) {
+    _logger.info('[_mapToDomain] SDK subscribeUrl: ${sdkSub.subscribeUrl}');
+    _logger.info('[_mapToDomain] SDK transferEnable: ${sdkSub.transferEnable}');
+    _logger.info('[_mapToDomain] SDK u: ${sdkSub.u}, d: ${sdkSub.d}');
+    _logger.info('[_mapToDomain] SDK expiredAt: ${sdkSub.expiredAt}');
+    
     return DomainSubscription(
       subscribeUrl: sdkSub.subscribeUrl ?? '',
       email: sdkSub.email ?? '',

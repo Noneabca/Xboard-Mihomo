@@ -131,7 +131,7 @@ class XBoardUserRepository implements UserRepository {
     return DomainUser(
       email: sdkUser.email,
       uuid: sdkUser.uuid,
-      avatarUrl: sdkUser.avatarUrl,
+      avatarUrl: sdkUser.avatarUrl ?? '', // 默认空字符串如果为null
       planId: sdkUser.planId,
       
       // 流量信息（优先从订阅信息获取，因为更准确）

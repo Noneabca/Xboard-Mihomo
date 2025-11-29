@@ -49,7 +49,7 @@ class DesktopNavigationRail extends ConsumerWidget {
           
           // 导航项
           Expanded(
-            child: _buildNavigationItems(context, colorScheme, chatState),
+            child: _buildNavigationItems(context, colorScheme),
           ),
           
           // 底部功能区
@@ -80,7 +80,6 @@ class DesktopNavigationRail extends ConsumerWidget {
   Widget _buildNavigationItems(
     BuildContext context,
     ColorScheme colorScheme,
-    ChatState chatState,
   ) {
     final appLocalizations = AppLocalizations.of(context);
     

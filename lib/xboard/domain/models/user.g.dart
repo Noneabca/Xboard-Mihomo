@@ -11,7 +11,7 @@ _$DomainUserImpl _$$DomainUserImplFromJson(Map<String, dynamic> json) =>
       email: json['email'] as String,
       uuid: json['uuid'] as String,
       avatarUrl: json['avatarUrl'] as String,
-      planId: (json['planId'] as num).toInt(),
+      planId: (json['planId'] as num?)?.toInt(),
       transferLimit: (json['transferLimit'] as num).toInt(),
       uploadedBytes: (json['uploadedBytes'] as num).toInt(),
       downloadedBytes: (json['downloadedBytes'] as num).toInt(),

@@ -29,8 +29,8 @@ mixin _$DomainUser {
   /// 头像 URL
   String get avatarUrl => throw _privateConstructorUsedError;
 
-  /// 套餐 ID
-  int get planId => throw _privateConstructorUsedError;
+  /// 套餐 ID（可能为空，新注册用户尚未购买套餐时为 null）
+  int? get planId => throw _privateConstructorUsedError;
 
   /// 总流量限制（字节）
   int get transferLimit => throw _privateConstructorUsedError;
@@ -97,7 +97,7 @@ abstract class $DomainUserCopyWith<$Res> {
       {String email,
       String uuid,
       String avatarUrl,
-      int planId,
+      int? planId,
       int transferLimit,
       int uploadedBytes,
       int downloadedBytes,
@@ -133,7 +133,7 @@ class _$DomainUserCopyWithImpl<$Res, $Val extends DomainUser>
     Object? email = null,
     Object? uuid = null,
     Object? avatarUrl = null,
-    Object? planId = null,
+    Object? planId = freezed,
     Object? transferLimit = null,
     Object? uploadedBytes = null,
     Object? downloadedBytes = null,
@@ -163,10 +163,10 @@ class _$DomainUserCopyWithImpl<$Res, $Val extends DomainUser>
           ? _value.avatarUrl
           : avatarUrl // ignore: cast_nullable_to_non_nullable
               as String,
-      planId: null == planId
+      planId: freezed == planId
           ? _value.planId
           : planId // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       transferLimit: null == transferLimit
           ? _value.transferLimit
           : transferLimit // ignore: cast_nullable_to_non_nullable
@@ -243,7 +243,7 @@ abstract class _$$DomainUserImplCopyWith<$Res>
       {String email,
       String uuid,
       String avatarUrl,
-      int planId,
+      int? planId,
       int transferLimit,
       int uploadedBytes,
       int downloadedBytes,
@@ -277,7 +277,7 @@ class __$$DomainUserImplCopyWithImpl<$Res>
     Object? email = null,
     Object? uuid = null,
     Object? avatarUrl = null,
-    Object? planId = null,
+    Object? planId = freezed,
     Object? transferLimit = null,
     Object? uploadedBytes = null,
     Object? downloadedBytes = null,
@@ -307,10 +307,10 @@ class __$$DomainUserImplCopyWithImpl<$Res>
           ? _value.avatarUrl
           : avatarUrl // ignore: cast_nullable_to_non_nullable
               as String,
-      planId: null == planId
+      planId: freezed == planId
           ? _value.planId
           : planId // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       transferLimit: null == transferLimit
           ? _value.transferLimit
           : transferLimit // ignore: cast_nullable_to_non_nullable
@@ -382,7 +382,7 @@ class _$DomainUserImpl extends _DomainUser {
       {required this.email,
       required this.uuid,
       required this.avatarUrl,
-      required this.planId,
+      this.planId,
       required this.transferLimit,
       required this.uploadedBytes,
       required this.downloadedBytes,
@@ -416,9 +416,9 @@ class _$DomainUserImpl extends _DomainUser {
   @override
   final String avatarUrl;
 
-  /// 套餐 ID
+  /// 套餐 ID（可能为空，新注册用户尚未购买套餐时为 null）
   @override
-  final int planId;
+  final int? planId;
 
   /// 总流量限制（字节）
   @override
@@ -583,7 +583,7 @@ abstract class _DomainUser extends DomainUser {
       {required final String email,
       required final String uuid,
       required final String avatarUrl,
-      required final int planId,
+      final int? planId,
       required final int transferLimit,
       required final int uploadedBytes,
       required final int downloadedBytes,
@@ -616,9 +616,9 @@ abstract class _DomainUser extends DomainUser {
   @override
   String get avatarUrl;
 
-  /// 套餐 ID
+  /// 套餐 ID（可能为空，新注册用户尚未购买套餐时为 null）
   @override
-  int get planId;
+  int? get planId;
 
   /// 总流量限制（字节）
   @override

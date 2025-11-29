@@ -19,8 +19,8 @@ class DomainUser with _$DomainUser {
     /// 头像 URL
     required String avatarUrl,
     
-    /// 套餐 ID
-    required int planId,
+    /// 套餐 ID（可能为空，新注册用户尚未购买套餐时为 null）
+    int? planId,
     
     /// 总流量限制（字节）
     required int transferLimit,

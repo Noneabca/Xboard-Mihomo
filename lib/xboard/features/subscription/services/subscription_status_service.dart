@@ -175,11 +175,8 @@ class SubscriptionStatusService {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
   bool shouldShowStartupDialog(SubscriptionStatusResult result) {
-    return result.shouldShowDialog && (
-      result.type == SubscriptionStatusType.noSubscription ||
-      result.type == SubscriptionStatusType.expired ||
-      result.type == SubscriptionStatusType.exhausted
-    );
+    // 首页套餐卡片已经展示了所有订阅状态，这里不再弹订阅状态弹窗
+    return false;
   }
 }
 final subscriptionStatusService = SubscriptionStatusService();

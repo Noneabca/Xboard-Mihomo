@@ -99,41 +99,41 @@ class _NoticeBannerState extends ConsumerState<NoticeBanner>
     });
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () => _showNoticeDialog(),
+      child: Container(
+        height: 40,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark 
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
+            width: 1,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Icon(
-              Icons.campaign_rounded,
-              size: 18,
-              color: Theme.of(context).colorScheme.primary,
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _showNoticeDialog(),
+          ],
+        ),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Icon(
+                Icons.campaign_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            Expanded(
               child: ClipRect(
-                  child: SlideTransition(
+                child: SlideTransition(
                   position: _slideAnimation,
                   child: Container(
                     height: 40,
@@ -155,9 +155,9 @@ class _NoticeBannerState extends ConsumerState<NoticeBanner>
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12), // 右侧间距
-        ],
+            const SizedBox(width: 12), // 右侧间距
+          ],
+        ),
       ),
     );
   }

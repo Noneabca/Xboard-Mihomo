@@ -309,6 +309,13 @@ class _PlansViewState extends ConsumerState<PlansView> {
             final screenWidth = MediaQuery.of(context).size.width;
             final isDesktop = screenWidth > 768;
             if (isDesktop) {
+              // 计算自适应列数：每列最小 315px（减少10%），间距 16px
+              // 注意：减去侧边栏宽度 88px
+              final sidebarWidth = 88.0;
+              final availableWidth = screenWidth - sidebarWidth - 32; // 减去侧边栏 + 左右 padding
+              final columns = (availableWidth / (315 + 16)).floor().clamp(1, 4);
+              final cardWidth = (availableWidth - (columns - 1) * 16) / columns;
+              
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Wrap(
@@ -316,7 +323,7 @@ class _PlansViewState extends ConsumerState<PlansView> {
                   runSpacing: 16,
                   children: plans.map((plan) {
                     return SizedBox(
-                      width: 350, // 固定宽度
+                      width: cardWidth, // 自适应宽度
                       child: _buildPlanCard(plan),
                     );
                   }).toList(),

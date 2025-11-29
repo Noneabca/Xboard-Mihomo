@@ -21,8 +21,8 @@ class Window {
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = WindowOptions(
       size: Size(props.width, props.height),
-      minimumSize: Size(props.width, props.height), // 设置最小尺寸等于当前尺寸
-      maximumSize: Size(props.width, props.height), // 设置最大尺寸等于当前尺寸，禁用调整大小
+      minimumSize: const Size(800, 600), // 设置最小尺寸，保证UI不会太小
+      center: true, // 窗口居中
     );
     if (!Platform.isMacOS || version > 10) {
       await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
@@ -60,7 +60,7 @@ class Window {
     }
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.setPreventClose(true);
-      await windowManager.setResizable(false); // 禁用窗口缩放
+      await windowManager.setResizable(true); // 允许窗口缩放
     });
   }
 

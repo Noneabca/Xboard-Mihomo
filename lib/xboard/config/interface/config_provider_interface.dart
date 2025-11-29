@@ -14,6 +14,7 @@
 library;
 
 import '../models/subscription_info.dart';
+import '../models/register_info.dart';
 
 /// 配置提供者接口
 abstract interface class ConfigProviderInterface {
@@ -40,6 +41,9 @@ abstract interface class ConfigProviderInterface {
 
   /// 获取订阅信息
   SubscriptionInfo? getSubscriptionInfo();
+
+  /// 获取注册页面信息
+  RegisterInfo? getRegisterInfo();
 
   /// 获取第一个订阅 URL
   String? getSubscriptionUrl();

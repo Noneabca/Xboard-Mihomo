@@ -16,7 +16,6 @@ class InviteCodesListCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final inviteState = ref.watch(inviteProvider);
     final codes = inviteState.inviteData?.codes ?? [];
-    final baseUrl = _getSdkBaseUrl();
 
     if (codes.isEmpty) {
       return const SizedBox.shrink();
@@ -52,9 +51,8 @@ class InviteCodesListCard extends ConsumerWidget {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final code = codes[index];
-                final inviteUrl = baseUrl.isNotEmpty 
-                    ? '$baseUrl/#/register?code=${code.code}'
-                    : '';
+                // 使用 buildRegisterUrl 基于邀请码哈希选择不同URL
+                final inviteUrl = _buildInviteUrl(code.code);
                 
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -144,9 +142,10 @@ class InviteCodesListCard extends ConsumerWidget {
     }
   }
 
-  String _getSdkBaseUrl() {
+  String _buildInviteUrl(String inviteCode) {
     try {
-      return XBoardConfig.panelUrl ?? '';
+      // 使用 buildRegisterUrl 方法，基于邀请码哈希选择不同URL
+      return XBoardConfig.buildRegisterUrl(inviteCode) ?? '';
     } catch (e) {
       return '';
     }

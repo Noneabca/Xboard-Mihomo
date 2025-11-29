@@ -5,6 +5,7 @@ import '../models/proxy_info.dart';
 import '../models/websocket_info.dart';
 import '../models/update_info.dart';
 import '../models/subscription_info.dart';
+import '../models/register_info.dart';
 import '../fetchers/remote_config_manager.dart';
 import '../../core/core.dart';
 import '../parsers/configuration_parser.dart';
@@ -205,6 +206,11 @@ class XBoardConfigAccessor {
     return _currentConfig?.subscription;
   }
 
+  /// 获取注册页面配置信息
+  RegisterInfo? getRegisterInfo() {
+    return _currentConfig?.register;
+  }
+
   // ========== 便捷访问方法 ==========
 
   /// 获取面板类型
@@ -286,6 +292,7 @@ class XBoardConfigAccessor {
       'updates': _currentConfig!.updates.length,
       'subscriptionUrls': _currentConfig!.subscription?.urls.length ?? 0,
       'subscriptionEncryptUrls': _currentConfig!.subscription?.encryptUrls.length ?? 0,
+      'registerUrls': _currentConfig!.register?.urls.length ?? 0,
       'currentProvider': _currentProvider,
       'lastUpdateTime': _lastUpdateTime?.toIso8601String(),
       'sourceHash': _currentConfig!.sourceHash,

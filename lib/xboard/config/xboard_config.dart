@@ -23,6 +23,7 @@ export 'models/websocket_info.dart';
 export 'models/update_info.dart';
 // 注意：SubscriptionInfo与SDK中的同名，这里只导出SubscriptionUrlInfo
 export 'models/subscription_info.dart' show SubscriptionUrlInfo;
+export 'models/register_info.dart' show RegisterUrlInfo;
 
 // 状态枚举（外部需要监听状态）
 export 'internal/xboard_config_accessor.dart' show ConfigAccessorState;
@@ -43,6 +44,7 @@ import 'models/proxy_info.dart';
 import 'models/websocket_info.dart';
 import 'models/update_info.dart';
 import 'models/subscription_info.dart';
+import 'models/register_info.dart';
 import '../infrastructure/infrastructure.dart';
 
 import 'interface/config_provider_interface.dart';
@@ -72,6 +74,9 @@ class _XBoardConfigProvider implements ConfigProviderInterface {
   
   @override
   SubscriptionInfo? getSubscriptionInfo() => accessor.getSubscriptionInfo();
+  
+  @override
+  RegisterInfo? getRegisterInfo() => accessor.getRegisterInfo();
   
   @override
   String? getSubscriptionUrl() => getSubscriptionInfo()?.firstUrl;
@@ -254,6 +259,9 @@ class XBoardConfig {
   /// 获取订阅配置信息
   static SubscriptionInfo? get subscriptionInfo => _accessor.getSubscriptionInfo();
 
+  /// 获取注册页面配置信息
+  static RegisterInfo? get registerInfo => _accessor.getRegisterInfo();
+
   /// 获取订阅URL列表
   static List<SubscriptionUrlInfo> get subscriptionUrlList => subscriptionInfo?.urls ?? [];
 
@@ -325,6 +333,25 @@ class XBoardConfig {
   /// 获取所有支持加密的订阅URL列表
   static List<String> get allEncryptSubscriptionUrls => 
       subscriptionUrlList.where((e) => e.supportEncrypt).map((e) => e.url).toList();
+
+  /// 获取注册URL列表
+  static List<RegisterUrlInfo> get registerUrlList => registerInfo?.urls ?? [];
+
+  /// 获取第一个注册URL
+  static String? get registerUrl => registerInfo?.firstUrl;
+
+  /// 获取所有注册URL列表
+  static List<String> get allRegisterUrls => registerUrlList.map((e) => e.url).toList();
+
+  /// 构建注册链接（基于邀请码哈希选择URL）
+  /// 
+  /// [inviteCode] 邀请码
+  /// 
+  /// 从配置的注册URL列表中基于邀请码哈希选择一个URL
+  /// 同一个邀请码始终对应同一个URL，不同邀请码会分散到不同URL上
+  static String? buildRegisterUrl(String inviteCode) {
+    return registerInfo?.buildRegisterUrl(inviteCode);
+  }
   
   /// 刷新配置
   static Future<void> refresh() async {

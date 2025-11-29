@@ -3,6 +3,7 @@ import 'proxy_info.dart';
 import 'websocket_info.dart';
 import 'update_info.dart';
 import 'subscription_info.dart';
+import 'register_info.dart';
 
 /// 解析后的配置数据
 /// 
@@ -14,6 +15,7 @@ class ParsedConfiguration {
   final List<WebSocketInfo> webSockets;
   final List<UpdateInfo> updates;
   final SubscriptionInfo? subscription;
+  final RegisterInfo? register;
   final DateTime parsedAt;
   final String sourceHash;
   final ConfigMetadata metadata;
@@ -25,6 +27,7 @@ class ParsedConfiguration {
     required this.webSockets,
     required this.updates,
     this.subscription,
+    this.register,
     required this.parsedAt,
     required this.sourceHash,
     required this.metadata,
@@ -46,6 +49,7 @@ class ParsedConfiguration {
     final wsList = json['ws'] as List<dynamic>? ?? [];
     final updateList = json['update'] as List<dynamic>? ?? [];
     final subscriptionData = json['subscription'] as Map<String, dynamic>?;
+    final registerData = json['register'] as Map<String, dynamic>?;
 
     return ParsedConfiguration(
       panelType: panelType,  // 面板类型
@@ -60,6 +64,7 @@ class ParsedConfiguration {
           .map((item) => UpdateInfo.fromJson(item as Map<String, dynamic>))
           .toList(),
       subscription: subscriptionData != null ? SubscriptionInfo.fromJson(subscriptionData) : null,
+      register: registerData != null ? RegisterInfo.fromJson(registerData) : null,
       parsedAt: DateTime.now(),
       sourceHash: json.hashCode.toString(),
       metadata: ConfigMetadata.fromJson(json['metadata'] as Map<String, dynamic>? ?? {}),
@@ -101,6 +106,16 @@ class ParsedConfiguration {
     return subscription?.buildSubscriptionUrl(token, forceEncrypt: preferEncrypt);
   }
 
+  /// 获取第一个可用的注册URL
+  String? get firstRegisterUrl {
+    return register?.firstUrl;
+  }
+
+  /// 构建注册链接
+  String? buildRegisterUrl(String inviteCode) {
+    return register?.buildRegisterUrl(inviteCode);
+  }
+
   /// 转换为JSON
   Map<String, dynamic> toJson() {
     return {
@@ -109,6 +124,7 @@ class ParsedConfiguration {
       'ws': webSockets.map((e) => e.toJson()).toList(),
       'update': updates.map((e) => e.toJson()).toList(),
       if (subscription != null) 'subscription': subscription!.toJson(),
+      if (register != null) 'register': register!.toJson(),
       'parsedAt': parsedAt.toIso8601String(),
       'sourceHash': sourceHash,
       'metadata': metadata.toJson(),
@@ -119,7 +135,8 @@ class ParsedConfiguration {
   String toString() {
     return 'ParsedConfiguration(panels: $panels, proxies: ${proxies.length}, '
            'ws: ${webSockets.length}, updates: ${updates.length}, '
-           'subscription: ${subscription != null ? subscription!.urls.length : 0})';
+           'subscription: ${subscription != null ? subscription!.urls.length : 0}, '
+           'register: ${register != null ? register!.urls.length : 0})';
   }
 }
 

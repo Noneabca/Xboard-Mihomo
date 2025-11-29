@@ -18,9 +18,9 @@ class InviteQrCard extends ConsumerWidget {
         ? inviteState.inviteData!.codes.first
         : null;
     
-    final baseUrl = _getSdkBaseUrl();
-    final inviteUrl = firstCode != null && baseUrl.isNotEmpty 
-        ? '$baseUrl/#/register?code=${firstCode.code}'
+    // 使用 buildRegisterUrl 基于邀请码哈希选择URL
+    final inviteUrl = firstCode != null 
+        ? _buildInviteUrl(firstCode.code)
         : '';
 
     return Card(
@@ -138,9 +138,10 @@ class InviteQrCard extends ConsumerWidget {
     }
   }
 
-  String _getSdkBaseUrl() {
+  String _buildInviteUrl(String inviteCode) {
     try {
-      return XBoardConfig.panelUrl ?? '';
+      // 使用 buildRegisterUrl 方法，基于邀请码哈希选择不同URL
+      return XBoardConfig.buildRegisterUrl(inviteCode) ?? '';
     } catch (e) {
       return '';
     }

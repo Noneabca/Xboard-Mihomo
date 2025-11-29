@@ -128,5 +128,21 @@
                 }
             }
         ]
+    },
+    "register": {
+        "urls": [
+            {
+                "url": "https://www.example1.com",
+                "description": "主要注册页面域名"
+            },
+            {
+                "url": "https://www.example2.com",
+                "description": "备用注册页面域名1"
+            },
+            {
+                "url": "https://www.example3.com",
+                "description": "备用注册页面域名2"
+            }
+        ]
     }
 }

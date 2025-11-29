@@ -353,13 +353,6 @@ enum DashboardWidget {
       child: NetworkDetection(),
     ),
   ),
-  tunButton(
-    GridItem(
-      crossAxisCellCount: 4,
-      child: TUNButton(),
-    ),
-    platforms: desktopPlatforms,
-  ),
   vpnButton(
     GridItem(
       crossAxisCellCount: 4,

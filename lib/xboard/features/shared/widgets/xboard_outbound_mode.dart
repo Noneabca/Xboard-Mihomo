@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_clash/xboard/services/services.dart';
 import 'package:fl_clash/xboard/core/core.dart';
-import 'tun_introduction_dialog.dart';
+// [已移除] TUN 功能相关导入
+// import 'tun_introduction_dialog.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 
 // 初始化文件级日志器
@@ -24,32 +25,16 @@ class XBoardOutboundMode extends StatelessWidget {
       });
     }
   }
-  Future<void> _handleTunToggle(BuildContext context, WidgetRef ref, bool selected) async {
-    if (selected) {
-      final storageService = ref.read(storageServiceProvider);
-      final hasShownResult = await storageService.hasTunFirstUseShown();
-      final hasShown = hasShownResult.dataOrNull ?? false;
-      if (!hasShown) {
-        if (context.mounted) {
-          final shouldEnable = await TunIntroductionDialog.show(context);
-          if (shouldEnable == true) {
-            await storageService.markTunFirstUseShown();
-            ref.read(patchClashConfigProvider.notifier).updateState(
-                  (state) => state.copyWith.tun(enable: true),
-                );
-          }
-        }
-      } else {
-        ref.read(patchClashConfigProvider.notifier).updateState(
-              (state) => state.copyWith.tun(enable: true),
-            );
-      }
-    } else {
-      ref.read(patchClashConfigProvider.notifier).updateState(
-            (state) => state.copyWith.tun(enable: false),
-          );
-    }
-  }
+  
+  // [已移除] TUN 切换逻辑 - TUN 功能已禁用
+  // Future<void> _handleTunToggle(BuildContext context, WidgetRef ref, bool selected) async {
+  //   if (selected) {
+  //     final storageService = ref.read(storageServiceProvider);
+  //     final hasShownResult = await storageService.hasTunFirstUseShown();
+  //     ...
+  //   }
+  // }
+  
   void _selectValidProxyForGlobalMode(WidgetRef ref) {
     _logger.debug('[XBoardOutboundMode] 开始选择有效代理节点');
     final groups = ref.read(groupsProvider);
@@ -90,17 +75,19 @@ class XBoardOutboundMode extends StatelessWidget {
   }
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tunSelectedColor = isDark 
-        ? Colors.green.shade800.withValues(alpha: 0.4)
-        : Colors.green.withValues(alpha: 0.2);
-    final tunCheckmarkColor = isDark ? Colors.green.shade300 : Colors.green.shade700;
-    final tunBorderColor = isDark ? Colors.green.shade600 : Colors.green.shade300;
+    // [已移除] TUN 模式相关颜色定义
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
+    // final tunSelectedColor = isDark 
+    //     ? Colors.green.shade800.withValues(alpha: 0.4)
+    //     : Colors.green.withValues(alpha: 0.2);
+    // final tunCheckmarkColor = isDark ? Colors.green.shade300 : Colors.green.shade700;
+    // final tunBorderColor = isDark ? Colors.green.shade600 : Colors.green.shade300;
     
     return Consumer(
       builder: (context, ref, child) {
         final mode = ref.watch(patchClashConfigProvider.select((state) => state.mode));
-        final tunEnabled = ref.watch(patchClashConfigProvider.select((state) => state.tun.enable));
+        // [已移除] TUN 启用状态监听
+        // final tunEnabled = ref.watch(patchClashConfigProvider.select((state) => state.tun.enable));
         return Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
@@ -171,30 +158,25 @@ class XBoardOutboundMode extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                      child: FilterChip(
-                        label: const Text("TUN"),
-                        selected: tunEnabled,
-                        onSelected: (selected) {
-                          _handleTunToggle(context, ref, selected);
-                        },
-                        selectedColor: tunSelectedColor,
-                        checkmarkColor: tunCheckmarkColor,
-                        side: tunEnabled
-                            ? BorderSide(color: tunBorderColor, width: 1)
-                            : null,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                        labelStyle: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ),
+                  // [已移除] TUN 模式 FilterChip - 已禁用 TUN 功能
+                  // Expanded(
+                  //   child: Padding(
+                  //     padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                  //     child: FilterChip(
+                  //       label: const Text("TUN"),
+                  //       selected: tunEnabled,
+                  //       onSelected: (selected) {
+                  //         _handleTunToggle(context, ref, selected);
+                  //       },
+                  //       ...
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                _getModeDescription(mode, tunEnabled, context),
+                _getModeDescription(mode, context),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                   fontSize: 12,
@@ -206,15 +188,16 @@ class XBoardOutboundMode extends StatelessWidget {
       },
     );
   }
-  String _getModeDescription(Mode mode, bool tunEnabled, BuildContext context) {
-    final tunStatus = tunEnabled ? ' | ${AppLocalizations.of(context).xboardTunEnabled}' : '';
+  String _getModeDescription(Mode mode, BuildContext context) {
+    // [已移除] TUN 状态显示
+    // final tunStatus = tunEnabled ? ' | ${AppLocalizations.of(context).xboardTunEnabled}' : '';
     switch (mode) {
       case Mode.rule:
-        return '${AppLocalizations.of(context).xboardProxyModeRuleDescription}$tunStatus';
+        return AppLocalizations.of(context).xboardProxyModeRuleDescription;
       case Mode.global:
-        return '${AppLocalizations.of(context).xboardProxyModeGlobalDescription}$tunStatus';
+        return AppLocalizations.of(context).xboardProxyModeGlobalDescription;
       case Mode.direct:
-        return '${AppLocalizations.of(context).xboardProxyModeDirectDescription}$tunStatus';
+        return AppLocalizations.of(context).xboardProxyModeDirectDescription;
     }
   }
 }

@@ -43,7 +43,8 @@ final defaultThemeProps = ThemeProps(
 const List<DashboardWidget> defaultDashboardWidgets = [
   DashboardWidget.networkSpeed,
   DashboardWidget.systemProxyButton,
-  DashboardWidget.tunButton,
+  // [已移除] TUN模式在Windows上存在兼容性问题
+  // DashboardWidget.tunButton,
   DashboardWidget.outboundMode,
   DashboardWidget.networkDetection,
   DashboardWidget.trafficUsage,

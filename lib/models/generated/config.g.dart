@@ -67,7 +67,7 @@ const _$DashboardWidgetEnumMap = {
   DashboardWidget.outboundMode: 'outboundMode',
   DashboardWidget.trafficUsage: 'trafficUsage',
   DashboardWidget.networkDetection: 'networkDetection',
-  DashboardWidget.tunButton: 'tunButton',
+  // DashboardWidget.tunButton: 'tunButton',  // [已移除] TUN模式
   DashboardWidget.vpnButton: 'vpnButton',
   DashboardWidget.systemProxyButton: 'systemProxyButton',
   DashboardWidget.intranetIp: 'intranetIp',

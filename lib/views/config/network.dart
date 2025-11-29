@@ -34,31 +34,6 @@ class VPNItem extends ConsumerWidget {
   }
 }
 
-class TUNItem extends ConsumerWidget {
-  const TUNItem({super.key});
-
-  @override
-  Widget build(BuildContext context, ref) {
-    final enable =
-        ref.watch(patchClashConfigProvider.select((state) => state.tun.enable));
-
-    return ListItem.switchItem(
-      title: Text(appLocalizations.tun),
-      subtitle: Text(appLocalizations.tunDesc),
-      delegate: SwitchDelegate(
-        value: enable,
-        onChanged: (value) async {
-          ref.read(patchClashConfigProvider.notifier).updateState(
-                (state) => state.copyWith.tun(
-                  enable: value,
-                ),
-              );
-        },
-      ),
-    );
-  }
-}
-
 class AllowBypassItem extends ConsumerWidget {
   const AllowBypassItem({super.key});
 
@@ -178,36 +153,14 @@ class AutoSetSystemDnsItem extends ConsumerWidget {
   }
 }
 
-class TunStackItem extends ConsumerWidget {
-  const TunStackItem({super.key});
-
-  @override
-  Widget build(BuildContext context, ref) {
-    final stack =
-        ref.watch(patchClashConfigProvider.select((state) => state.tun.stack));
-
-    return ListItem.options(
-      title: Text(appLocalizations.stackMode),
-      subtitle: Text(stack.name),
-      delegate: OptionsDelegate<TunStack>(
-        value: stack,
-        options: TunStack.values,
-        textBuilder: (value) => value.name,
-        onChanged: (value) {
-          if (value == null) {
-            return;
-          }
-          ref.read(patchClashConfigProvider.notifier).updateState(
-                (state) => state.copyWith.tun(
-                  stack: value,
-                ),
-              );
-        },
-        title: appLocalizations.stackMode,
-      ),
-    );
-  }
-}
+// [已移除] TunStackItem - TUN 模式相关组件已禁用
+// class TunStackItem extends ConsumerWidget {
+//   const TunStackItem({super.key});
+//   @override
+//   Widget build(BuildContext context, ref) {
+//     ...
+//   }
+// }
 
 class BypassDomainItem extends StatelessWidget {
   const BypassDomainItem({super.key});
@@ -273,80 +226,15 @@ class BypassDomainItem extends StatelessWidget {
   }
 }
 
-class RouteModeItem extends ConsumerWidget {
-  const RouteModeItem({super.key});
+// [已移除] RouteModeItem - TUN 模式相关组件已禁用
+// class RouteModeItem extends ConsumerWidget {
+//   ...
+// }
 
-  @override
-  Widget build(BuildContext context, ref) {
-    final routeMode =
-        ref.watch(networkSettingProvider.select((state) => state.routeMode));
-    return ListItem<RouteMode>.options(
-      title: Text(appLocalizations.routeMode),
-      subtitle: Text(Intl.message("routeMode_${routeMode.name}")),
-      delegate: OptionsDelegate<RouteMode>(
-        title: appLocalizations.routeMode,
-        options: RouteMode.values,
-        onChanged: (RouteMode? value) {
-          if (value == null) {
-            return;
-          }
-          ref.read(networkSettingProvider.notifier).updateState(
-                (state) => state.copyWith(
-                  routeMode: value,
-                ),
-              );
-        },
-        textBuilder: (routeMode) => Intl.message(
-          "routeMode_${routeMode.name}",
-        ),
-        value: routeMode,
-      ),
-    );
-  }
-}
-
-class RouteAddressItem extends ConsumerWidget {
-  const RouteAddressItem({super.key});
-
-  @override
-  Widget build(BuildContext context, ref) {
-    final bypassPrivate = ref.watch(networkSettingProvider
-        .select((state) => state.routeMode == RouteMode.bypassPrivate));
-    if (bypassPrivate) {
-      return Container();
-    }
-    return ListItem.open(
-      title: Text(appLocalizations.routeAddress),
-      subtitle: Text(appLocalizations.routeAddressDesc),
-      delegate: OpenDelegate(
-        blur: false,
-        maxWidth: 360,
-        title: appLocalizations.routeAddress,
-        widget: Consumer(
-          builder: (_, ref, __) {
-            final routeAddress = ref.watch(
-              patchClashConfigProvider.select(
-                (state) => state.tun.routeAddress,
-              ),
-            );
-            return ListInputPage(
-              title: appLocalizations.routeAddress,
-              items: routeAddress,
-              titleBuilder: (item) => Text(item),
-              onChange: (items) {
-                ref.read(patchClashConfigProvider.notifier).updateState(
-                      (state) => state.copyWith.tun(
-                        routeAddress: List.from(items),
-                      ),
-                    );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+// [已移除] RouteAddressItem - TUN 模式相关组件已禁用
+// class RouteAddressItem extends ConsumerWidget {
+//   ...
+// }
 
 final networkItems = [
   if (Platform.isAndroid) const VPNItem(),
@@ -371,13 +259,12 @@ final networkItems = [
   ...generateSection(
     title: appLocalizations.options,
     items: [
-      if (system.isDesktop) const TUNItem(),
+      // [已禁用] Windows上TUN模式存在兼容性问题，暂时移除
+      // if (system.isDesktop) const TUNItem(),
+      // const TunStackItem(),  // TUN 相关
+      // const RouteModeItem(),  // TUN 相关
+      // const RouteAddressItem(),  // TUN 相关
       if (Platform.isMacOS) const AutoSetSystemDnsItem(),
-      const TunStackItem(),
-      if (!system.isDesktop) ...[
-        const RouteModeItem(),
-        const RouteAddressItem(),
-      ]
     ],
   ),
 ];
@@ -404,11 +291,12 @@ class NetworkListView extends ConsumerWidget {
                     accessControl: state.accessControl,
                   ),
                 );
-            ref.read(patchClashConfigProvider.notifier).updateState(
-                  (state) => state.copyWith(
-                    tun: defaultTun,
-                  ),
-                );
+            // [已移除] TUN 配置重置逻辑
+            // ref.read(patchClashConfigProvider.notifier).updateState(
+            //       (state) => state.copyWith(
+            //         tun: defaultTun,
+            //       ),
+            //     );
           },
           tooltip: appLocalizations.reset,
           icon: const Icon(

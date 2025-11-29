@@ -408,53 +408,8 @@ class AppController {
   Future _applyProfile() async {
     await clashCore.requestGc();
     await _setupClashConfig();
-    
-    // [TUN修复] 等待Clash核心完全就绪（特别TUN模式需要更长时间）
-    // 通过检测Groups是否可用来判断Clash核心是否准备好
-    final tunEnabled = _ref.read(patchClashConfigProvider).tun.enable;
-    if (tunEnabled) {
-      commonPrint.log('[TUN修复] TUN模式已启用，等待Clash核心就绪...');
-      int waitCount = 0;
-      const int maxWait = 20; // 20次 * 500ms = 10秒
-      bool coreReady = false;
-      
-      while (waitCount < maxWait && !coreReady) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        waitCount++;
-        
-        try {
-          // 尝试直接调用getProxies检测核心是否就绪
-          final proxies = await clashCore.clashInterface.getProxies().timeout(
-            const Duration(milliseconds: 300),
-            onTimeout: () => <String, dynamic>{},
-          );
-          if (proxies.isNotEmpty && proxies.containsKey('GLOBAL')) {
-            coreReady = true;
-            commonPrint.log('[TUN修复] ✅ Clash核心就绪完成 (耗时: ${waitCount * 500}ms)');
-          } else if (waitCount % 4 == 0) {
-            // 每2秒输出一次进度
-            commonPrint.log('[TUN修复] 等待中... (${waitCount * 500}ms / ${maxWait * 500}ms)');
-          }
-        } catch (e) {
-          // 忽略错误，继续等待
-          if (waitCount % 4 == 0) {
-            commonPrint.log('[TUN修复] 核心尚未就绪: $e');
-          }
-        }
-      }
-      
-      if (!coreReady) {
-        commonPrint.log('[TUN修复] ⚠️ Clash核心超时，已等待 ${waitCount * 500}ms');
-        commonPrint.log('[TUN修复] 提示: Windows上的TUN模式可能需要管理员权限或存在兼容性问题');
-      }
-    }
-    
-    // 现在核心应该就绪了，直接更新Groups
     await updateGroups();
     await updateProviders();
-    
-    // [TUN修复] 确保TUN模式下Groups已加载后初始化selectedMap
-    await _ensureSelectedMapInitialized();
   }
 
   Future applyProfile({bool silence = false}) async {

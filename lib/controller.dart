@@ -321,11 +321,140 @@ class AppController {
     }
   }
 
+
+  /// [TUN修复] 确保selectedMap已初始化（解决TUN模式重启后无节点问题）
+  Future<void> _ensureSelectedMapInitialized() async {
+    try {
+      final currentProfile = _ref.read(currentProfileProvider);
+      if (currentProfile == null) return;
+      
+      // 如果selectedMap不为空，说明已经初始化过了
+      if (currentProfile.selectedMap.isNotEmpty) {
+        return;
+      }
+      
+      // 等待Groups加载完成
+      commonPrint.log('[TUN修复] 等待Groups加载以初始化selectedMap...');
+      int retryCount = 0;
+      const int maxRetries = 30; // 30 * 200ms = 6秒（比订阅导入多留1秒）
+      List<Group> groups = [];
+      
+      while (retryCount < maxRetries) {
+        groups = _ref.read(groupsProvider);
+        if (groups.isNotEmpty && groups.any((g) => g.name == 'GLOBAL' && g.all.isNotEmpty)) {
+          break;
+        }
+        await Future.delayed(const Duration(milliseconds: 200));
+        retryCount++;
+      }
+      
+      if (groups.isEmpty) {
+        commonPrint.log('[TUN修复] ⚠️ 等待超时，未能获取到Groups数据');
+        return;
+      }
+      
+      commonPrint.log('[TUN修复] ✅ Groups加载完成 (耗时: ${retryCount * 200}ms)');
+      
+      // 查找GLOBAL组并选择第一个有效节点
+      final globalGroup = groups.firstWhere(
+        (group) => group.name == 'GLOBAL',
+        orElse: () => groups.first,
+      );
+      
+      if (globalGroup.all.isEmpty) {
+        commonPrint.log('[TUN修复] GLOBAL组没有节点');
+        return;
+      }
+      
+      // 选择第一个有效节点（跳过内置节点）
+      final validProxy = globalGroup.all.firstWhere(
+        (proxy) => proxy.name != 'DIRECT' && 
+                   proxy.name != 'REJECT' && 
+                   proxy.name != 'PASS' &&
+                   proxy.type != 'URLTest' &&
+                   proxy.type != 'Fallback' &&
+                   proxy.type != 'LoadBalance',
+        orElse: () => globalGroup.all.first,
+      );
+      
+      commonPrint.log('[TUN修复] 为GLOBAL组选择节点: ${validProxy.name}');
+      
+      // 更新selectedMap并保存
+      final newSelectedMap = {
+        globalGroup.name: validProxy.name,
+      };
+      
+      await _ref.read(profilesProvider.notifier).updateProfile(
+        currentProfile.id,
+        (profile) => profile.copyWith(selectedMap: newSelectedMap),
+      );
+      
+      // 通知Clash核心切换节点
+      try {
+        await changeProxy(
+          groupName: globalGroup.name,
+          proxyName: validProxy.name,
+        );
+        commonPrint.log('[TUN修复] ✅ Clash核心已切换到节点: ${validProxy.name}');
+      } catch (e) {
+        commonPrint.log('[TUN修复] ⚠️ 通知Clash核心切换节点失败: $e');
+      }
+      
+    } catch (e) {
+      commonPrint.log('[TUN修复] 初始化selectedMap失败: $e');
+    }
+  }
+
   Future _applyProfile() async {
     await clashCore.requestGc();
     await _setupClashConfig();
+    
+    // [TUN修复] 等待Clash核心完全就绪（特别TUN模式需要更长时间）
+    // 通过检测Groups是否可用来判断Clash核心是否准备好
+    final tunEnabled = _ref.read(patchClashConfigProvider).tun.enable;
+    if (tunEnabled) {
+      commonPrint.log('[TUN修复] TUN模式已启用，等待Clash核心就绪...');
+      int waitCount = 0;
+      const int maxWait = 20; // 20次 * 500ms = 10秒
+      bool coreReady = false;
+      
+      while (waitCount < maxWait && !coreReady) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        waitCount++;
+        
+        try {
+          // 尝试直接调用getProxies检测核心是否就绪
+          final proxies = await clashCore.clashInterface.getProxies().timeout(
+            const Duration(milliseconds: 300),
+            onTimeout: () => <String, dynamic>{},
+          );
+          if (proxies.isNotEmpty && proxies.containsKey('GLOBAL')) {
+            coreReady = true;
+            commonPrint.log('[TUN修复] ✅ Clash核心就绪完成 (耗时: ${waitCount * 500}ms)');
+          } else if (waitCount % 4 == 0) {
+            // 每2秒输出一次进度
+            commonPrint.log('[TUN修复] 等待中... (${waitCount * 500}ms / ${maxWait * 500}ms)');
+          }
+        } catch (e) {
+          // 忽略错误，继续等待
+          if (waitCount % 4 == 0) {
+            commonPrint.log('[TUN修复] 核心尚未就绪: $e');
+          }
+        }
+      }
+      
+      if (!coreReady) {
+        commonPrint.log('[TUN修复] ⚠️ Clash核心超时，已等待 ${waitCount * 500}ms');
+        commonPrint.log('[TUN修复] 提示: Windows上的TUN模式可能需要管理员权限或存在兼容性问题');
+      }
+    }
+    
+    // 现在核心应该就绪了，直接更新Groups
     await updateGroups();
     await updateProviders();
+    
+    // [TUN修复] 确保TUN模式下Groups已加载后初始化selectedMap
+    await _ensureSelectedMapInitialized();
   }
 
   Future applyProfile({bool silence = false}) async {

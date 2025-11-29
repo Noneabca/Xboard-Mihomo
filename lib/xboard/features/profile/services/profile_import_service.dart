@@ -18,13 +18,16 @@ final _logger = FileLogger('profile_import_service.dart');
 final xboardProfileImportServiceProvider = Provider<XBoardProfileImportService>((ref) {
   return XBoardProfileImportService(ref);
 });
+
 class XBoardProfileImportService {
   final Ref _ref;
   bool _isImporting = false;
   static const int maxRetries = 3;
   static const Duration retryDelay = Duration(seconds: 2);
   static const Duration downloadTimeout = Duration(seconds: 30);
+
   XBoardProfileImportService(this._ref);
+
   Future<ImportResult> importSubscription(
     String url, {
     Function(ImportStatus, double, String?)? onProgress,
@@ -39,16 +42,25 @@ class XBoardProfileImportService {
     final stopwatch = Stopwatch()..start();
     try {
       _logger.info('开始导入订阅配置: $url');
-      onProgress?.call(ImportStatus.cleaning, 0.2, '清理旧的订阅配置');
-      await _cleanOldUrlProfiles();
-      onProgress?.call(ImportStatus.downloading, 0.6, '下载配置文件');
+      
+      // 1. 先下载并验证配置 (不再先清理，防止数据丢失)
+      onProgress?.call(ImportStatus.downloading, 0.3, '下载配置文件');
       final profile = await _downloadAndValidateProfile(url);
-      onProgress?.call(ImportStatus.validating, 0.8, '验证配置格式');
-      onProgress?.call(ImportStatus.adding, 1.0, '添加到配置列表');
+      
+      onProgress?.call(ImportStatus.validating, 0.6, '验证配置格式');
+      
+      // 2. 添加到配置列表并应用
+      onProgress?.call(ImportStatus.adding, 0.8, '应用新配置');
       await _addProfile(profile);
+
+      // 3. 应用成功后，再清理旧的配置 (排除刚添加的这个)
+      onProgress?.call(ImportStatus.cleaning, 0.9, '清理旧的订阅配置');
+      await _cleanOldUrlProfiles(excludeId: profile.id);
+
       stopwatch.stop();
       onProgress?.call(ImportStatus.success, 1.0, '导入成功');
       _logger.info('订阅配置导入成功，耗时: ${stopwatch.elapsedMilliseconds}ms');
+      
       return ImportResult.success(
         profile: profile,
         duration: stopwatch.elapsed,
@@ -59,6 +71,7 @@ class XBoardProfileImportService {
       final errorType = _classifyError(e);
       final userMessage = _getUserFriendlyErrorMessage(e, errorType);
       onProgress?.call(ImportStatus.failed, 0.0, userMessage);
+      
       return ImportResult.failure(
         errorMessage: userMessage,
         errorType: errorType,
@@ -68,6 +81,7 @@ class XBoardProfileImportService {
       _isImporting = false;
     }
   }
+
   Future<ImportResult> importSubscriptionWithRetry(
     String url, {
     Function(ImportStatus, double, String?)? onProgress,
@@ -95,23 +109,28 @@ class XBoardProfileImportService {
       errorType: ImportErrorType.networkError,
     );
   }
-  Future<void> _cleanOldUrlProfiles() async {
+
+  Future<void> _cleanOldUrlProfiles({String? excludeId}) async {
     try {
-      final profiles = globalState.config.profiles;
-      final urlProfiles = profiles.where((profile) => profile.type == ProfileType.url).toList();
+      final profiles = _ref.read(profilesProvider);
+      // 过滤出 URL 类型且不是当前新添加的 profile
+      final urlProfiles = profiles.where((profile) => 
+        profile.type == ProfileType.url && profile.id != excludeId
+      ).toList();
       
       for (final profile in urlProfiles) {
         _logger.debug('删除旧的URL配置: ${profile.label ?? profile.id}');
-        _ref.read(profilesProvider.notifier).deleteProfileById(profile.id);
-        _clearProfileEffect(profile.id);
+        // 这里仅删除，不触发副作用清理，因为新配置已经生效
+        await _ref.read(profilesProvider.notifier).deleteProfileById(profile.id);
       }
       
       _logger.info('清理了 ${urlProfiles.length} 个旧的URL配置');
     } catch (e) {
       _logger.warning('清理旧配置时出错', e);
-      throw Exception('清理旧配置失败: $e');
+      // 清理失败不应中断主流程，仅记录日志
     }
   }
+
   Future<Profile> _downloadAndValidateProfile(String url) async {
     try {
       _logger.info('开始下载配置: $url');
@@ -265,30 +284,144 @@ class XBoardProfileImportService {
   Future<void> _addProfile(Profile profile) async {
     try {
       // 1. 添加配置到列表
-      _ref.read(profilesProvider.notifier).setProfile(profile);
+      await _ref.read(profilesProvider.notifier).setProfile(profile);
       
       // 2. 强制设置为当前配置（订阅导入是用户主动操作，应该立即生效）
       final currentProfileIdNotifier = _ref.read(currentProfileIdProvider.notifier);
       currentProfileIdNotifier.value = profile.id;
       _logger.info('✅ 已设置为当前配置: ${profile.label ?? profile.id}');
       
-      // 3. 使用 silence 模式直接应用配置（新路由系统中 homeScaffoldKey 不可用）
-      // needSetupProvider 的监听器会触发 handleChangeProfile，但因为 commonScaffoldState 
-      // 未 mounted 会失败，所以我们在这里手动用 silence 模式触发
+      // 3. 使用 silence 模式直接应用配置
       _logger.info('📋 使用 silence 模式应用配置...');
       try {
         await globalState.appController.applyProfile(silence: true);
-        _logger.info('✅ 配置应用成功');
+        _logger.info('✅ 配置应用指令下发成功');
+        
+        // 4. [修复] 智能等待并初始化 SelectedMap
+        // 解决 TUN 模式/重启后无节点数据的问题
+        await _waitForGroupsAndInitializeMap();
+
       } catch (e) {
-        _logger.error('❌ 配置应用失败', e);
+        _logger.error('❌ 配置应用流程中出错', e);
         // 不抛出异常，因为配置已经保存了
       }
       
-      _logger.info('配置添加成功: ${profile.label ?? profile.id}');
+      _logger.info('配置添加流程完成: ${profile.label ?? profile.id}');
     } catch (e) {
       throw Exception('添加配置失败: $e');
     }
   }
+
+  /// [核心修复] 等待 Groups 加载完成并初始化选中状态
+  /// 使用轮询替代固定延迟，解决 TUN 模式加载慢的问题
+  Future<void> _waitForGroupsAndInitializeMap() async {
+    _logger.info('🔧 开始等待代理组加载...');
+    
+    int retryCount = 0;
+    const int maxRetries = 25; // 25 * 200ms = 5秒
+    List<Group> groups = [];
+    
+    // 轮询检测 groups 是否已加载
+    while (retryCount < maxRetries) {
+      groups = _ref.read(groupsProvider);
+      
+      // 简单的判断标准：有数据，且 GLOBAL 组内有节点
+      if (groups.isNotEmpty && groups.any((g) => g.name == 'GLOBAL' && g.all.isNotEmpty)) {
+        break;
+      }
+      
+      await Future.delayed(const Duration(milliseconds: 200));
+      retryCount++;
+    }
+
+    if (groups.isEmpty) {
+      _logger.warning('⚠️ 等待超时，未能获取到代理组数据，SelectedMap 初始化可能不准确');
+      return;
+    }
+
+    _logger.info('✅ 代理组加载完成 (耗时: ${retryCount * 200}ms)，开始初始化 SelectedMap');
+    
+    // 传入获取到的 groups 进行初始化
+    await _initializeSelectedMapAfterImport(groups);
+  }
+  
+  /// 初始化 selectedMap - 确保全局代理组有选中的节点
+  /// 修复：传入 groups 参数，并持久化保存结果
+  Future<void> _initializeSelectedMapAfterImport(List<Group> groups) async {
+    try {
+      // 获取当前配置（注意：此时 currentProfileId 已经更新）
+      final currentProfile = globalState.config.currentProfile;
+      if (currentProfile == null) {
+        _logger.warning('当前没有选中的配置，跳过 selectedMap 初始化');
+        return;
+      }
+      
+      // 如果 selectedMap 已经有有效数据，跳过初始化
+      if (currentProfile.selectedMap.isNotEmpty) {
+        // 校验一下 key 是否有效
+        final isValid = currentProfile.selectedMap.keys.any((k) => groups.any((g) => g.name == k));
+        if (isValid) {
+          _logger.info('selectedMap 已有有效数据，跳过初始化');
+          return;
+        }
+      }
+      
+      // 查找 GLOBAL 代理组
+      final globalGroup = groups.firstWhere(
+        (group) => group.name == 'GLOBAL',
+        orElse: () => groups.first,
+      );
+      
+      if (globalGroup.all.isEmpty) {
+        _logger.warning('GLOBAL 代理组没有节点，无法初始化');
+        return;
+      }
+      
+      // 选择策略优化：跳过内置节点，但允许 Selector
+      // 原代码可能会错误地过滤掉所有节点
+      final validProxy = globalGroup.all.firstWhere(
+        (proxy) => proxy.name != 'DIRECT' && 
+                   proxy.name != 'REJECT' && 
+                   proxy.name != 'PASS' &&
+                   proxy.type != 'URLTest' &&
+                   proxy.type != 'Fallback' &&
+                   proxy.type != 'LoadBalance',
+        orElse: () => globalGroup.all.first,
+      );
+      
+      _logger.info('🎯 为 GLOBAL 代理组选择节点: ${validProxy.name}');
+      
+      // 更新 selectedMap
+      final newSelectedMap = {
+        globalGroup.name: validProxy.name,
+      };
+      
+      // [关键修复] 立即更新并保存 Profile 到持久化存储
+      // 这解决了重启软件后选中状态丢失（显示无节点）的问题
+      await _ref.read(profilesProvider.notifier).updateProfile(
+        currentProfile.id,
+        (profile) => profile.copyWith(selectedMap: newSelectedMap),
+      );
+      
+      // 通知 Clash 核心切换节点
+      try {
+        await globalState.appController.changeProxy(
+          groupName: globalGroup.name,
+          proxyName: validProxy.name,
+        );
+        _logger.info('✅ Clash核心已切换到节点: ${validProxy.name}');
+      } catch (e) {
+        _logger.warning('通知 Clash 核心切换节点失败', e);
+      }
+      
+      _logger.info('✅ selectedMap 初始化并保存成功');
+      
+    } catch (e) {
+      _logger.error('初始化 selectedMap 失败', e);
+      // 不抛出异常，因为这不应该阻止配置导入
+    }
+  }
+
   void _clearProfileEffect(String profileId) {
     try {
       if (globalState.config.currentProfileId == profileId) {
@@ -306,10 +439,12 @@ class XBoardProfileImportService {
       _logger.warning('清理配置缓存时出错', e);
     }
   }
+
   ImportErrorType _classifyError(dynamic error) {
     final errorString = error.toString().toLowerCase();
     if (errorString.contains('timeout') || 
         errorString.contains('连接失败') ||
+        errorString.contains('socketexception') ||
         errorString.contains('network')) {
       return ImportErrorType.networkError;
     }
@@ -323,16 +458,19 @@ class XBoardProfileImportService {
         errorString.contains('解析') ||
         errorString.contains('配置文件格式错误') ||
         errorString.contains('clash配置') ||
+        errorString.contains('yaml') ||
         errorString.contains('invalid config')) {
       return ImportErrorType.validationError;
     }
     if (errorString.contains('存储') || 
         errorString.contains('文件') ||
+        errorString.contains('permission') ||
         errorString.contains('保存')) {
       return ImportErrorType.storageError;
     }
     return ImportErrorType.unknownError;
   }
+
   String _getUserFriendlyErrorMessage(dynamic error, ImportErrorType errorType) {
     final errorString = error.toString();
     
@@ -361,5 +499,6 @@ class XBoardProfileImportService {
         return '导入失败，请稍后重试或联系技术支持';
     }
   }
+  
   bool get isImporting => _isImporting;
-} 
+}

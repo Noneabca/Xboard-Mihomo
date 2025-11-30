@@ -496,6 +496,20 @@ class XBoardSDK {
       rethrow; // 重新抛出异常，让 UI 层可以获取详细错误信息
     }
   }
+  
+  /// 获取系统配置（提现方式、货币符号等）
+  /// 返回 SystemConfig 包含 withdraw_methods 和 currency 等信息
+  static Future<sdk.SystemConfig?> getSystemConfig() async {
+    try {
+      _logger.info('[SDK] 获取系统配置...');
+      final result = await _sdk.balance.getSystemConfig();
+      _logger.info('[SDK] 系统配置获取成功: 提现方式=${result.withdrawMethods}');
+      return result;
+    } catch (e) {
+      _logger.error('[SDK] 获取系统配置失败', e);
+      return null;
+    }
+  }
 
   // ========== 优惠券相关 ==========
 

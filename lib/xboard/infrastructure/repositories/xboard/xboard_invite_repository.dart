@@ -142,9 +142,14 @@ class XBoardInviteRepository implements InviteRepository {
     try {
       _logger.info('提现佣金: method=$method');
       
-      // XBoard SDK 可能没有提现接口，需要确认
-      // 这里先抛出未实现异常
-      throw UnimplementedError('提现功能暂未实现');
+      // 通过 SDK 调用提现接口（V2Board 通过工单系统）
+      await sdk.XBoardSDK.withdrawCommission(
+        withdrawMethod: method,
+        withdrawAccount: account,
+      );
+      
+      _logger.info('提现申请提交成功');
+      return Result.success(null);
       
     } on XBoardException catch (e) {
       _logger.info('提现佣金失败: ${e.message}');

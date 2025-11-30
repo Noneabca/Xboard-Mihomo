@@ -3,6 +3,7 @@ import 'package:fl_clash/xboard/utils/xboard_notification.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/xboard/features/invite/providers/invite_provider.dart';
+import 'package:fl_clash/xboard/sdk/xboard_sdk.dart' as sdk;
 
 class WithdrawDialog extends ConsumerStatefulWidget {
   const WithdrawDialog({super.key});
@@ -15,12 +16,46 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
   final TextEditingController _accountController = TextEditingController();
   bool _isWithdrawing = false;
   bool _isSuccess = false;
+  bool _isLoadingConfig = true;
   
-  // 提现方式列表
-  // TODO: 未来可以通过 SystemConfig API 从后端获取: config.withdrawMethods
-  // 接口: /api/v1/user/comm/config -> SystemConfig.withdrawMethods
-  final List<String> _withdrawMethods = ['支付宝', '微信', '银行卡', 'PayPal', 'USDT'];
+  // 提现方式列表（从 API 获取）
+  List<String> _withdrawMethods = [];
   String? _selectedMethod;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSystemConfig();
+  }
+  
+  /// 从 API 加载系统配置和提现方式
+  Future<void> _loadSystemConfig() async {
+    try {
+      final config = await sdk.XBoardSDK.getSystemConfig();
+      if (config != null && mounted) {
+        setState(() {
+          _withdrawMethods = config.withdrawMethods;
+          _isLoadingConfig = false;
+        });
+      } else {
+        // 如果获取失败，使用默认值
+        if (mounted) {
+          setState(() {
+            _withdrawMethods = ['支付宝', 'USDT', 'Paypal']; // V2Board 默认值
+            _isLoadingConfig = false;
+          });
+        }
+      }
+    } catch (e) {
+      // 失败时使用默认值
+      if (mounted) {
+        setState(() {
+          _withdrawMethods = ['支付宝', 'USDT', 'Paypal'];
+          _isLoadingConfig = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -95,6 +130,20 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
           ),
           const SizedBox(height: 16),
           if (!_isWithdrawing && !_isSuccess) ...[
+            // 加载提现方式中...
+            if (_isLoadingConfig)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_withdrawMethods.isEmpty)
+              const Text(
+                '暂无可用的提现方式',
+                style: TextStyle(color: Colors.grey),
+              )
+            else ...[
             DropdownButtonFormField<String>(
               value: _selectedMethod,
               decoration: InputDecoration(
@@ -134,6 +183,7 @@ class _WithdrawDialogState extends ConsumerState<WithdrawDialog> {
               ),
               textAlign: TextAlign.center,
             ),
+            ],
           ],
         ],
       ),
